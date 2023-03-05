@@ -1,40 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <class>SignalReconstruction</class>
+ <widget class="QMainWindow" name="SignalReconstruction">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>758</width>
-    <height>623</height>
+    <width>679</width>
+    <height>600</height>
    </rect>
-  </property>
-  <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
-  </property>
-  <property name="baseSize">
-   <size>
-    <width>0</width>
-    <height>0</height>
-   </size>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <property name="maximumSize">
-    <size>
-     <width>800</width>
-     <height>556</height>
-    </size>
-   </property>
-   <property name="layoutDirection">
-    <enum>Qt::LeftToRight</enum>
-   </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
@@ -52,7 +31,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="QLabel" name="label">
+       <widget class="QLabel" name="ProjectName">
         <property name="font">
          <font>
           <family>Ubuntu Mono</family>
@@ -66,7 +45,7 @@
          <string notr="true">color: rgb(239, 41, 41);</string>
         </property>
         <property name="text">
-         <string>MRI-Phantom-Viewer</string>
+         <string>MRI-Phantom-VIewer</string>
         </property>
        </widget>
       </item>
@@ -92,7 +71,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>758</width>
+     <width>679</width>
      <height>22</height>
     </rect>
    </property>
@@ -100,8 +79,8 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionLoad_Json"/>
-    <addaction name="actionLoad_Phantom"/>
+    <addaction name="actionopen"/>
+    <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -114,30 +93,38 @@
     <property name="title">
      <string>Help</string>
     </property>
+    <addaction name="actionTeam"/>
+    <addaction name="separator"/>
+    <addaction name="actionAbout_SBME_Viewer"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionLoad_Json">
+  <action name="actionopen">
    <property name="text">
-    <string>Load Json</string>
-   </property>
-  </action>
-  <action name="actionLoad_Phantom">
-   <property name="text">
-    <string>Load Phantom</string>
-   </property>
-  </action>
-  <action name="actionFont">
-   <property name="text">
-    <string>Font</string>
+    <string>Load Signal</string>
    </property>
   </action>
   <action name="actionExit">
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionTeam">
+   <property name="text">
+    <string>Team</string>
+   </property>
+  </action>
+  <action name="actionAbout_SBME_Viewer">
+   <property name="text">
+    <string>About SBME Viewer</string>
+   </property>
+  </action>
+  <action name="actionFont">
+   <property name="text">
+    <string>Font</string>
    </property>
   </action>
  </widget>
