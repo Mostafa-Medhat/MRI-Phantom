@@ -1,0 +1,27 @@
+{
+    "RF" : {
+        "Amp" : 5,
+        "Pos" : 0,
+        "Duration" : 4
+        },
+    "SS" : {
+        "Amp" : 3,
+        "Pos" : 0,
+        "Duration" : 4
+        },
+    "PG" : {
+        "Amp" : 3,
+        "Pos" : 4,
+        "Duration" : 4
+        },
+    "FG" : {
+        "Amp" : 6,
+        "Pos" : 8,
+        "Duration" : 4
+        },
+    "RO" : {
+        "Amp" : 6,
+        "Pos" : 8,
+        "Duration" : 4
+        }
+}
