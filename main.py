@@ -17,6 +17,8 @@ class MainWindow(qtw.QMainWindow):
         self.view_page = Phantom()
         self.centralWidget().layout().addWidget(self.view_page)
 
+        self.actionLoad_Json.triggered.connect(lambda: self.view_page.json_read())
+
 
 if __name__ == '__main__':
     app = qtw.QApplication(sys.argv)
