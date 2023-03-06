@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>927</width>
-    <height>688</height>
+    <width>1170</width>
+    <height>776</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../../icons/MRI_1.png</normaloff>../../icons/MRI_1.png</iconset>
+    <normaloff>../docs/icons/MRI_1.png</normaloff>../docs/icons/MRI_1.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -75,7 +75,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>927</width>
+     <width>1170</width>
      <height>26</height>
     </rect>
    </property>
@@ -83,6 +83,8 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionLoad_Phantom"/>
+    <addaction name="separator"/>
     <addaction name="actionLoad_Json"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
@@ -129,6 +131,11 @@
   <action name="actionFont">
    <property name="text">
     <string>Font</string>
+   </property>
+  </action>
+  <action name="actionLoad_Phantom">
+   <property name="text">
+    <string>Load Phantom</string>
    </property>
   </action>
  </widget>
