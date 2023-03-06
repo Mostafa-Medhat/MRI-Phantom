@@ -18,6 +18,8 @@ class MainWindow(qtw.QMainWindow):
         self.centralWidget().layout().addWidget(self.view_page)
 
         self.actionLoad_Json.triggered.connect(lambda: self.view_page.json_read())
+        self.actionLoad_Phantom.triggered.connect(lambda: self.view_page.phantom_read())
+        self.view_page.pushButton_apply.clicked.connect(lambda: self.view_page.custom_sequence())
 
 
 if __name__ == '__main__':
