@@ -25,9 +25,29 @@ class Phantom(qtw.QWidget):
         super().__init__()
         uic.loadUi("src/ui/Phantom.ui", self)
         self.df = None
+        self.df_custom = None
+
+        self.figure_sequence = Figure(dpi=80)
+        self.figure_sequence_custom = Figure(dpi=80)
+
         self.phantom_layout()
-        self.sequence_layout()
-        self.sequence_custom_layout()
+
+        self.canvas_sequence, self.axis_sequence_RF, self.axis_sequence_SS, self.axis_sequence_PG, self.axis_sequence_FG, self.axis_sequence_RO = self.sequence_layout(
+            self.figure_sequence, self.verticalLayout_4)
+
+        self.canvas_sequence_custom, self.axis_sequence_custom_RF, self.axis_sequence_custom_SS, self.axis_sequence_custom_PG, self.axis_sequence_custom_FG, self.axis_sequence_custom_RO = self.sequence_layout(
+            self.figure_sequence_custom, self.verticalLayout_6)
+
+        self.axes_sequence = [self.axis_sequence_RF, self.axis_sequence_SS, self.axis_sequence_PG, self.axis_sequence_FG,
+                              self.axis_sequence_RO]
+        self.axes_sequence_custom = [self.axis_sequence_custom_RF, self.axis_sequence_custom_SS,
+                                     self.axis_sequence_custom_PG, self.axis_sequence_custom_FG,
+                                     self.axis_sequence_custom_RO]
+
+        self.pushButton_openSequence.clicked.connect(lambda: self.json_read())
+        self.pushButton_apply.clicked.connect(lambda: self.custom_sequence())
+
+        # self.sequence_custom_layout()
 
     def phantom_layout(self):
         ################ Phantom Original Layout #######################
@@ -54,83 +74,40 @@ class Phantom(qtw.QWidget):
             axis.set_xticks([])
             axis.set_yticks([])
 
-    def sequence_layout(self):
+    def sequence_layout(self, figure, layout):
         ######################## Sequence Layout #########################
-        self.figure_sequence = Figure(dpi=80)
-        self.axes_sequence_RF = self.figure_sequence.add_subplot(5, 1, 1)
-        self.axes_sequence_RF.set_ylabel("RF")
-        self.axes_sequence_RF.axes.set_title("Sequence")
+        axis_sequence_RF = figure.add_subplot(5, 1, 1)
+        axis_sequence_RF.set_ylabel("RF")
+        axis_sequence_RF.axes.set_title("Sequence")
 
-        self.axes_sequence_SS = self.figure_sequence.add_subplot(5, 1, 2, sharex=self.axes_sequence_RF)
-        self.axes_sequence_SS.set_ylabel("SS")
+        axis_sequence_SS = figure.add_subplot(5, 1, 2, sharex=axis_sequence_RF)
+        axis_sequence_SS.set_ylabel("SS")
 
+        axis_sequence_PG = figure.add_subplot(5, 1, 3, sharex=axis_sequence_RF)
+        axis_sequence_PG.set_ylabel("PG")
 
-        self.axes_sequence_PG = self.figure_sequence.add_subplot(5, 1, 3, sharex=self.axes_sequence_RF)
-        self.axes_sequence_PG.set_ylabel("PG")
+        axis_sequence_FG = figure.add_subplot(5, 1, 4, sharex=axis_sequence_RF)
+        axis_sequence_FG.set_ylabel("FG")
 
+        axis_sequence_RO = figure.add_subplot(5, 1, 5, sharex=axis_sequence_RF)
+        axis_sequence_RO.set_ylabel("RO")
+        axis_sequence_RO.set_frame_on(False)
 
-        self.axes_sequence_FG = self.figure_sequence.add_subplot(5, 1, 4, sharex=self.axes_sequence_RF)
-        self.axes_sequence_FG.set_ylabel("FG")
-
-
-        self.axes_sequence_RO = self.figure_sequence.add_subplot(5, 1, 5, sharex=self.axes_sequence_RF)
-        self.axes_sequence_RO.set_ylabel("RO")
-        self.axes_sequence_RO.set_frame_on(False)
-
-        self.canvas_sequence = FigureCanvas(self.figure_sequence)
-        self.figure_sequence.subplots_adjust(hspace=0.5)
+        canvas_sequence = FigureCanvas(figure)
+        figure.subplots_adjust(hspace=0.5)
         # self.toolbar = NavigationToolbar(self.canvas_sequence, self)
 
         # self.canvas_sequence.figure.tight_layout()
 
-        self.verticalLayout_4.addWidget(self.canvas_sequence)
+        layout.addWidget(canvas_sequence)
 
-        self.axes_sequence = [self.axes_sequence_RF, self.axes_sequence_SS, self.axes_sequence_PG,
-                              self.axes_sequence_FG]
-        for axis in self.axes_sequence:  ## removing axes from the figure so the image would look nice
+        axes_sequence = [axis_sequence_RF, axis_sequence_SS, axis_sequence_PG, axis_sequence_FG]
+
+        for axis in axes_sequence:  ## removing axes from the figure so the image would look nice
             axis.set_frame_on(False)
             axis.axes.get_xaxis().set_visible(False)
 
-
-    def sequence_custom_layout(self):
-        ######################## Sequence Custom Layout #########################
-        self.figure_sequence_custom = Figure(dpi=80)
-        self.axes_sequence_custom_RF = self.figure_sequence_custom.add_subplot(5, 1, 1)
-        self.axes_sequence_custom_RF.set_ylabel("RF")
-        self.axes_sequence_custom_RF.axes.set_title("Sequence Custom")
-
-        self.axes_sequence_custom_SS = self.figure_sequence_custom.add_subplot(5, 1, 2,
-                                                                               sharex=self.axes_sequence_custom_RF)
-        self.axes_sequence_custom_SS.set_ylabel("SS")
-
-        self.axes_sequence_custom_PG = self.figure_sequence_custom.add_subplot(5, 1, 3,
-                                                                               sharex=self.axes_sequence_custom_RF)
-        self.axes_sequence_custom_PG.set_ylabel("PG")
-
-
-        self.axes_sequence_custom_FG = self.figure_sequence_custom.add_subplot(5, 1, 4,
-                                                                               sharex=self.axes_sequence_custom_RF)
-        self.axes_sequence_custom_FG.set_ylabel("FG")
-
-        self.axes_sequence_custom_RO = self.figure_sequence_custom.add_subplot(5, 1, 5,
-                                                                               sharex=self.axes_sequence_custom_RF)
-        self.axes_sequence_custom_RO.set_ylabel("RO")
-        self.axes_sequence_custom_RO.set_frame_on(False)
-
-        self.canvas_sequence_custom = FigureCanvas(self.figure_sequence_custom)
-        self.figure_sequence_custom.subplots_adjust(hspace=0.5)
-
-        # self.toolbar = NavigationToolbar(self.canvas_sequence_custom, self)
-        # self.canvas_sequence_custom.figure.tight_layout()
-
-        self.verticalLayout_6.addWidget(self.canvas_sequence_custom)
-
-        self.axes_sequence_custom = [self.axes_sequence_custom_RF, self.axes_sequence_custom_SS,
-                                     self.axes_sequence_custom_PG,
-                                     self.axes_sequence_custom_FG]
-        for axis in self.axes_sequence_custom:  ## removing axes from the figure so the image would look nice
-            axis.set_frame_on(False)
-            axis.axes.get_xaxis().set_visible(False)
+        return canvas_sequence, axis_sequence_RF, axis_sequence_SS, axis_sequence_PG, axis_sequence_FG, axis_sequence_RO
 
         ############################ Navy Background ##############################
 
@@ -142,33 +119,31 @@ class Phantom(qtw.QWidget):
         # self.axes_sequence_RF.axes.tick_params(axis="y", colors="white")
         # self.axes_sequence_RF.axes.title.set_color('white')
         #
-        # self.axes_sequence_SS.xaxis.label.set_color('white')
-        # self.axes_sequence_SS.yaxis.label.set_color('white')
-        # self.axes_sequence_SS.axes.tick_params(axis="x", colors="white")
-        # self.axes_sequence_SS.axes.tick_params(axis="y", colors="white")
-        # self.axes_sequence_SS.axes.title.set_color('white')
+        # self.axis_sequence_SS.xaxis.label.set_color('white')
+        # self.axis_sequence_SS.yaxis.label.set_color('white')
+        # self.axis_sequence_SS.axes.tick_params(axis="x", colors="white")
+        # self.axis_sequence_SS.axes.tick_params(axis="y", colors="white")
+        # self.axis_sequence_SS.axes.title.set_color('white')
         #
-        # self.axes_sequence_PG.xaxis.label.set_color('white')
-        # self.axes_sequence_PG.yaxis.label.set_color('white')
-        # self.axes_sequence_PG.axes.tick_params(axis="x", colors="white")
-        # self.axes_sequence_PG.axes.tick_params(axis="y", colors="white")
-        # self.axes_sequence_PG.axes.title.set_color('white')
+        # self.axis_sequence_PG.xaxis.label.set_color('white')
+        # self.axis_sequence_PG.yaxis.label.set_color('white')
+        # self.axis_sequence_PG.axes.tick_params(axis="x", colors="white")
+        # self.axis_sequence_PG.axes.tick_params(axis="y", colors="white")
+        # self.axis_sequence_PG.axes.title.set_color('white')
         #
-        # self.axes_sequence_FG.xaxis.label.set_color('white')
-        # self.axes_sequence_FG.yaxis.label.set_color('white')
-        # self.axes_sequence_FG.axes.tick_params(axis="x", colors="white")
-        # self.axes_sequence_FG.axes.tick_params(axis="y", colors="white")
-        # self.axes_sequence_FG.axes.title.set_color('white')
+        # self.axis_sequence_FG.xaxis.label.set_color('white')
+        # self.axis_sequence_FG.yaxis.label.set_color('white')
+        # self.axis_sequence_FG.axes.tick_params(axis="x", colors="white")
+        # self.axis_sequence_FG.axes.tick_params(axis="y", colors="white")
+        # self.axis_sequence_FG.axes.title.set_color('white')
         #
-        # self.axes_sequence_RO.xaxis.label.set_color('white')
-        # self.axes_sequence_RO.yaxis.label.set_color('white')
-        # self.axes_sequence_RO.axes.tick_params(axis="x", colors="white")
-        # self.axes_sequence_RO.axes.tick_params(axis="y", colors="white")
-        # self.axes_sequence_RO.axes.title.set_color('white')
+        # self.axis_sequence_RO.xaxis.label.set_color('white')
+        # self.axis_sequence_RO.yaxis.label.set_color('white')
+        # self.axis_sequence_RO.axes.tick_params(axis="x", colors="white")
+        # self.axis_sequence_RO.axes.tick_params(axis="y", colors="white")
+        # self.axis_sequence_RO.axes.title.set_color('white')
 
         #####################################################################################
-
-
 
     def json_read(self):
 
@@ -177,114 +152,61 @@ class Phantom(qtw.QWidget):
             pass
         else:
             dictionary = json.load(open(path))
-            # print(type(dictionary))
             self.df = pd.DataFrame(dictionary)
+            self.plotting_sequence(self.axes_sequence, self.canvas_sequence, self.df)
 
-            RF_Duration = np.linspace(-self.df['RF'].Duration / 2, self.df['RF'].Duration / 2, 100)
-            self.axes_sequence_RF.plot(RF_Duration + self.df['RF'].Duration / 2, self.df['RF'].Amp * np.sinc(2 * RF_Duration),
-                                       color='b')
-            self.axes_sequence_RF.plot(np.linspace(0, self.df['RO'].Pos + self.df['RO'].Duration, 2), np.zeros(shape=2), color='b',
-                                       linewidth=0.7)
+    def plotting_sequence(self, axes, canvas, dataFrame):
 
+        RF_Duration = np.linspace(-dataFrame['RF'].Duration / 2, dataFrame['RF'].Duration / 2, 100)
+        axes[0].plot(RF_Duration + dataFrame['RF'].Duration / 2,
+                     dataFrame['RF'].Amp * np.sinc(2 * RF_Duration),
+                     color='b')
 
-            SS_Duration = np.linspace(0, self.df['SS'].Duration, 100)
-            SS_step = self.df['RF'].Amp * np.sinc(RF_Duration) > self.df['RF'].Amp / 4
-            # print(SS_step)
-            self.axes_sequence_SS.set_ylabel("SS")
-            self.axes_sequence_SS.plot(SS_Duration, (self.df['SS'].Amp * SS_step), color='g')
-            self.axes_sequence_SS.plot(np.linspace(0, self.df['RO'].Pos + self.df['RO'].Duration, 2), np.zeros(shape=2), color='g',
-                                       linewidth=0.7)
+        #
+        SS_Duration = np.linspace(0, dataFrame['SS'].Duration, 100)
+        SS_step = dataFrame['RF'].Amp * np.sinc(RF_Duration) > dataFrame['RF'].Amp / 4
+        # print(SS_step)
+        axes[1].plot(SS_Duration, (dataFrame['SS'].Amp * SS_step), color='g')
 
-            #
+        #
+        PG_Duration = np.linspace(0, dataFrame['PG'].Duration, 100)
+        for i in range(-dataFrame['PG'].Amp, dataFrame['PG'].Amp, 1):
+            axes[2].plot(PG_Duration + dataFrame['PG'].Pos, (i * SS_step), color='blueviolet')
 
-            PG_Duration = np.linspace(0, self.df['PG'].Duration, 100)
-            PG_step = self.df['RF'].Amp * np.sinc(RF_Duration) > self.df['RF'].Amp / 4
-            for i in range(-self.df['PG'].Amp, self.df['PG'].Amp, 1):
-                self.axes_sequence_PG.plot(PG_Duration + self.df['PG'].Pos, (i * PG_step), color='blueviolet')
+        #
+        FG_Duration = np.linspace(0, dataFrame['FG'].Duration, 100)
+        axes[3].plot(FG_Duration + dataFrame['FG'].Pos, (dataFrame['FG'].Amp * SS_step), color='orange')
 
-            self.axes_sequence_PG.plot(np.linspace(0, self.df['RO'].Pos + self.df['RO'].Duration, 2), np.zeros(shape=2),
-                                       color='blueviolet',
-                                       linewidth=0.7)
+        #
+        RO_Duration = np.linspace(0, dataFrame['RO'].Duration, 100)
+        axes[4].plot(RO_Duration + dataFrame['RO'].Pos, (dataFrame['RO'].Amp * SS_step), color='red')
 
-            #
-            FG_Duration = np.linspace(0, self.df['FG'].Duration, 100)
-            FG_step = self.df['RF'].Amp * np.sinc(RF_Duration) > self.df['RF'].Amp / 4
-            self.axes_sequence_FG.plot(FG_Duration + self.df['FG'].Pos, (self.df['FG'].Amp * FG_step), color='orange')
-            self.axes_sequence_FG.plot(np.linspace(0, self.df['RO'].Pos + self.df['RO'].Duration, 2), np.zeros(shape=2),
-                                       color='orange', linewidth=0.7)
+        for axis in axes:
+            axis.plot(np.linspace(0, dataFrame['RO'].Pos + dataFrame['RO'].Duration, 2), np.zeros(shape=2),
+                      color='b',
+                      linewidth=0.7)
 
-            #
-            RO_Duration = np.linspace(0, self.df['RO'].Duration, 100)
-            RO_step = self.df['RF'].Amp * np.sinc(RF_Duration) > self.df['RF'].Amp / 4
-            self.axes_sequence_RO.plot(RO_Duration + self.df['RO'].Pos, (self.df['RO'].Amp * RO_step), color='red')
-            self.axes_sequence_RO.plot(np.linspace(0, self.df['RO'].Pos + self.df['RO'].Duration, 2), np.zeros(shape=2), color='red',
-                                       linewidth=0.7)
-
-            #
-            self.canvas_sequence.draw()
+        #
+        canvas.draw()
 
     def custom_sequence(self):
         print("Entered")
-        df_custom = self.df.copy()
-        print(df_custom)
-        df_custom['RF'].Amp = self.spinBox_RF.value()
+        self.df_custom = self.df.copy()
+        print(self.df_custom)
+        self.df_custom['RF'].Amp = self.spinBox_RF.value()
+        print(self.df_custom)
         # df_cpy['PG'].Amp = self.spinBox_Gradient.value()
-
-        print(df_custom['RF'].Amp)
-        print(df_custom)
-
-        RF_Duration = np.linspace(-df_custom['RF'].Duration / 2, df_custom['RF'].Duration / 2, 100)
-        self.axes_sequence_custom_RF.plot(RF_Duration + df_custom['RF'].Duration / 2, df_custom['RF'].Amp * np.sinc(2 * RF_Duration),
-                                   color='b')
-        self.axes_sequence_custom_RF.plot(np.linspace(0, df_custom['RO'].Pos + df_custom['RO'].Duration, 2), np.zeros(shape=2), color='b',
-                                   linewidth=0.7)
-
-        SS_Duration = np.linspace(0, df_custom['SS'].Duration, 100)
-        SS_step = df_custom['RF'].Amp * np.sinc(RF_Duration) > df_custom['RF'].Amp / 4
-        # print(SS_step)
-        self.axes_sequence_custom_SS.set_ylabel("SS")
-        self.axes_sequence_custom_SS.plot(SS_Duration, (df_custom['SS'].Amp * SS_step), color='g')
-        self.axes_sequence_custom_SS.plot(np.linspace(0, df_custom['RO'].Pos + df_custom['RO'].Duration, 2), np.zeros(shape=2), color='g',
-                                   linewidth=0.7)
-
-        #
-
-        PG_Duration = np.linspace(0, df_custom['PG'].Duration, 100)
-        PG_step = df_custom['RF'].Amp * np.sinc(RF_Duration) > df_custom['RF'].Amp / 4
-        for i in range(-df_custom['PG'].Amp, df_custom['PG'].Amp, 1):
-            self.axes_sequence_custom_PG.plot(PG_Duration + df_custom['PG'].Pos, (i * PG_step), color='blueviolet')
-
-        self.axes_sequence_custom_PG.plot(np.linspace(0, df_custom['RO'].Pos + df_custom['RO'].Duration, 2), np.zeros(shape=2),
-                                   color='blueviolet',
-                                   linewidth=0.7)
-
-        #
-        FG_Duration = np.linspace(0, df_custom['FG'].Duration, 100)
-        FG_step = df_custom['RF'].Amp * np.sinc(RF_Duration) > df_custom['RF'].Amp / 4
-        self.axes_sequence_custom_FG.plot(FG_Duration + df_custom['FG'].Pos, (df_custom['FG'].Amp * FG_step), color='orange')
-        self.axes_sequence_custom_FG.plot(np.linspace(0, df_custom['RO'].Pos + df_custom['RO'].Duration, 2), np.zeros(shape=2),
-                                   color='orange', linewidth=0.7)
-
-        #
-        RO_Duration = np.linspace(0, df_custom['RO'].Duration, 100)
-        RO_step = df_custom['RF'].Amp * np.sinc(RF_Duration) > df_custom['RF'].Amp / 4
-        self.axes_sequence_custom_RO.plot(RO_Duration + df_custom['RO'].Pos, (df_custom['RO'].Amp * RO_step), color='red')
-        self.axes_sequence_custom_RO.plot(np.linspace(0, df_custom['RO'].Pos + df_custom['RO'].Duration, 2), np.zeros(shape=2), color='red',
-                                   linewidth=0.7)
-
-        #
-        self.canvas_sequence_custom.draw()
-
-
+        self.plotting_sequence(self.axes_sequence_custom, self.canvas_sequence_custom, self.df_custom)
 
     def phantom_read(self):
         initial_dir = "\src\docs\phantom images"
         abs_initial_dir = os.path.abspath(initial_dir)
-        phantom_path = QFileDialog.getOpenFileName(self, directory=abs_initial_dir, filter="Images files (*.jpg *.jpgs *.png)")[0]
+        phantom_path = \
+            QFileDialog.getOpenFileName(self, directory=abs_initial_dir, filter="Images files (*.jpg *.jpgs *.png)")[0]
         if phantom_path == "":
             pass
         else:
             img = cv2.imread(phantom_path)
-            img = cv2.resize(img,(558, 282), interpolation=cv2.INTER_AREA)
+            img = cv2.resize(img, (558, 282), interpolation=cv2.INTER_AREA)
             self.axes_Orig_Spat.imshow(img, cmap='gray')
             self.canvas_Orig_Spat.draw()
