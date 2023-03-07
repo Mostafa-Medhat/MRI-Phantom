@@ -206,7 +206,7 @@ class Phantom(qtw.QWidget):
 
     def phantom_read(self):
         phantom_path = QFileDialog.getOpenFileName(self, "Open File", "src/docs/phantom images", filter="Images files ("
-                                                                                                        "*.jpg *.jpgs "
+                                                                                                        "*.jpg *.jpeg "
                                                                                                         "*.png)")[0]
         if phantom_path == "":
             pass
