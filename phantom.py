@@ -50,6 +50,7 @@ class Phantom(qtw.QWidget):
         # self.sequence_custom_layout()
 
     def phantom_layout(self):
+
         ################ Phantom Original Layout #######################
         self.figure_Orig_Spat = Figure(figsize=(20, 20), dpi=100)
         self.axes_Orig_Spat = self.figure_Orig_Spat.add_subplot()
@@ -70,7 +71,7 @@ class Phantom(qtw.QWidget):
         self.horizontalLayout_3.addWidget(self.canvas_reconstruct)
 
         self.axes_phantom = [self.axes_Orig_Spat, self.axes_kspace, self.axes_reconstruct]
-        for axis in self.axes_phantom:  ## removing axes from the figure so the image would look nice
+        for axis in self.axes_phantom:  ## removing axes from the figure
             axis.set_xticks([])
             axis.set_yticks([])
 
@@ -95,19 +96,21 @@ class Phantom(qtw.QWidget):
 
         canvas_sequence = FigureCanvas(figure)
         figure.subplots_adjust(hspace=0.5)
-        # self.toolbar = NavigationToolbar(self.canvas_sequence, self)
 
+        # self.toolbar = NavigationToolbar(self.canvas_sequence, self)
         # self.canvas_sequence.figure.tight_layout()
 
         layout.addWidget(canvas_sequence)
 
         axes_sequence = [axis_sequence_RF, axis_sequence_SS, axis_sequence_PG, axis_sequence_FG]
 
-        for axis in axes_sequence:  ## removing axes from the figure so the image would look nice
+        for axis in axes_sequence:  ## removing axes from the figure
             axis.set_frame_on(False)
             axis.axes.get_xaxis().set_visible(False)
 
         return canvas_sequence, axis_sequence_RF, axis_sequence_SS, axis_sequence_PG, axis_sequence_FG, axis_sequence_RO
+
+
 
         ############################ Navy Background ##############################
 
@@ -156,6 +159,12 @@ class Phantom(qtw.QWidget):
             self.plotting_sequence(self.axes_sequence, self.canvas_sequence, self.df)
 
     def plotting_sequence(self, axes, canvas, dataFrame):
+        colors = ['b', 'g', 'blueviolet', 'orange', 'red']
+        for color, axis in enumerate(axes):
+            axis.clear()
+            axis.plot(np.linspace(0, dataFrame['RO'].Pos + dataFrame['RO'].Duration, 2), np.zeros(shape=2),
+                      color=colors[color],
+                      linewidth=0.7)
 
         RF_Duration = np.linspace(-dataFrame['RF'].Duration / 2, dataFrame['RF'].Duration / 2, 100)
         axes[0].plot(RF_Duration + dataFrame['RF'].Duration / 2,
@@ -181,10 +190,7 @@ class Phantom(qtw.QWidget):
         RO_Duration = np.linspace(0, dataFrame['RO'].Duration, 100)
         axes[4].plot(RO_Duration + dataFrame['RO'].Pos, (dataFrame['RO'].Amp * SS_step), color='red')
 
-        for axis in axes:
-            axis.plot(np.linspace(0, dataFrame['RO'].Pos + dataFrame['RO'].Duration, 2), np.zeros(shape=2),
-                      color='b',
-                      linewidth=0.7)
+
 
         #
         canvas.draw()
