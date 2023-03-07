@@ -110,8 +110,6 @@ class Phantom(qtw.QWidget):
 
         return canvas_sequence, axis_sequence_RF, axis_sequence_SS, axis_sequence_PG, axis_sequence_FG, axis_sequence_RO
 
-
-
         ############################ Navy Background ##############################
 
         # self.canvas_sequence.figure.set_facecolor("#19232D")
@@ -149,12 +147,11 @@ class Phantom(qtw.QWidget):
         #####################################################################################
 
     def json_read(self):
-
-        path = QFileDialog.getOpenFileName(self, filter="Json files (*.json)")[0]
-        if path == "":
+        sequence_path = QFileDialog.getOpenFileName(self, "Open File", filter="Json files (*.json)")[0]
+        if sequence_path == "":
             pass
         else:
-            dictionary = json.load(open(path))
+            dictionary = json.load(open(sequence_path))
             self.df = pd.DataFrame(dictionary)
             self.plotting_sequence(self.axes_sequence, self.canvas_sequence, self.df)
 
@@ -169,33 +166,36 @@ class Phantom(qtw.QWidget):
         RF_Duration = np.linspace(-dataFrame['RF'].Duration / 2, dataFrame['RF'].Duration / 2, 100)
         axes[0].plot(RF_Duration + dataFrame['RF'].Duration / 2,
                      dataFrame['RF'].Amp * np.sinc(2 * RF_Duration),
-                     color='b')
+                     color=colors[0])
+        axes[0].set_ylabel("RF")
 
         #
         SS_Duration = np.linspace(0, dataFrame['SS'].Duration, 100)
         SS_step = dataFrame['RF'].Amp * np.sinc(RF_Duration) > dataFrame['RF'].Amp / 4
-        # print(SS_step)
-        axes[1].plot(SS_Duration, (dataFrame['SS'].Amp * SS_step), color='g')
+        axes[1].plot(SS_Duration, (dataFrame['SS'].Amp * SS_step), color=colors[1])
+        axes[1].set_ylabel("SS")
 
         #
         PG_Duration = np.linspace(0, dataFrame['PG'].Duration, 100)
         for i in range(-dataFrame['PG'].Amp, dataFrame['PG'].Amp, 1):
-            axes[2].plot(PG_Duration + dataFrame['PG'].Pos, (i * SS_step), color='blueviolet')
+            axes[2].plot(PG_Duration + dataFrame['PG'].Pos, (i * SS_step), color=colors[2])
+        axes[2].set_ylabel("PG")
 
         #
         FG_Duration = np.linspace(0, dataFrame['FG'].Duration, 100)
-        axes[3].plot(FG_Duration + dataFrame['FG'].Pos, (dataFrame['FG'].Amp * SS_step), color='orange')
+        axes[3].plot(FG_Duration + dataFrame['FG'].Pos, (dataFrame['FG'].Amp * SS_step), color=colors[3])
+        axes[3].set_ylabel("FG")
 
         #
         RO_Duration = np.linspace(0, dataFrame['RO'].Duration, 100)
-        axes[4].plot(RO_Duration + dataFrame['RO'].Pos, (dataFrame['RO'].Amp * SS_step), color='red')
-
-
+        axes[4].plot(RO_Duration + dataFrame['RO'].Pos, (dataFrame['RO'].Amp * SS_step), color=colors[4])
+        axes[4].set_ylabel("RO")
 
         #
         canvas.draw()
 
     def custom_sequence(self):
+        print("")
         print("Entered")
         self.df_custom = self.df.copy()
         print(self.df_custom)
@@ -205,10 +205,9 @@ class Phantom(qtw.QWidget):
         self.plotting_sequence(self.axes_sequence_custom, self.canvas_sequence_custom, self.df_custom)
 
     def phantom_read(self):
-        initial_dir = "\src\docs\phantom images"
-        abs_initial_dir = os.path.abspath(initial_dir)
-        phantom_path = \
-            QFileDialog.getOpenFileName(self, directory=abs_initial_dir, filter="Images files (*.jpg *.jpgs *.png)")[0]
+        phantom_path = QFileDialog.getOpenFileName(self, "Open File", "src/docs/phantom images", filter="Images files ("
+                                                                                                        "*.jpg *.jpgs "
+                                                                                                        "*.png)")[0]
         if phantom_path == "":
             pass
         else:
