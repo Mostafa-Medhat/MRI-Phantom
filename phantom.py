@@ -147,7 +147,7 @@ class Phantom(qtw.QWidget):
         #####################################################################################
 
     def json_read(self):
-        sequence_path = QFileDialog.getOpenFileName(self, "Open File", filter="Json files (*.json)")[0]
+        sequence_path = QFileDialog.getOpenFileName(self, "Open File", "sequence", filter="Json files (*.json)")[0]
         if sequence_path == "":
             pass
         else:
