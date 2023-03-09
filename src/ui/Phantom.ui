@@ -241,6 +241,9 @@
                 <bold>true</bold>
                </font>
               </property>
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(222, 0, 0);</string>
+              </property>
               <property name="text">
                <string>Clear All</string>
               </property>
