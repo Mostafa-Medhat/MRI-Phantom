@@ -12,7 +12,8 @@ import sys
 import numpy as np
 import qdarkstyle
 from PyQt5 import QtWidgets, uic
-from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtCore import QSize
+from PyQt5.QtWidgets import QFileDialog, QSizePolicy
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
@@ -49,8 +50,8 @@ class Phantom(qtw.QWidget):
 
         self.pushButton_openSequence.clicked.connect(lambda: self.json_read())
         self.pushButton_apply.clicked.connect(lambda: self.custom_sequence())
-        self.pushButton_clear.clicked.connect(
-            lambda: self.clear_all(self.axes_sequence))
+        self.pushButton_clear.clicked.connect(lambda: self.clear_all())
+        self.pushButton_openPhantom.clicked.connect(lambda: self.phantom_read())
 
         # self.sequence_custom_layout()
 
@@ -90,9 +91,7 @@ class Phantom(qtw.QWidget):
     def json_read(self):
         sequence_path = QFileDialog.getOpenFileName(
             self, "Open File", "sequence", filter="Json files (*.json)")[0]
-        if sequence_path == "":
-            pass
-        else:
+        if sequence_path != "":
             dictionary = json.load(open(sequence_path))
             self.df = pd.DataFrame(dictionary)
             self.plotting_sequence(
@@ -116,7 +115,7 @@ class Phantom(qtw.QWidget):
         #
         SS_Duration = np.linspace(0, dataFrame['SS'].Duration, 100)
         SS_step = dataFrame['RF'].Amp * \
-            np.sinc(RF_Duration) > dataFrame['RF'].Amp / 4
+                  np.sinc(RF_Duration) > dataFrame['RF'].Amp / 4
         axes[1].plot(SS_Duration, (dataFrame['SS'].Amp * SS_step),
                      color=colors[1])
         axes[1].set_ylabel("SS")
@@ -144,71 +143,81 @@ class Phantom(qtw.QWidget):
         canvas.draw()
 
     def custom_sequence(self):
-        print("")
         print("Entered")
-        self.df_custom = self.df.copy()
-        print(self.df_custom)
-        self.df_custom['RF'].Amp = self.spinBox_RF.value()
-        print(self.df_custom)
-        # df_cpy['PG'].Amp = self.spinBox_Gradient.value()
-        self.plotting_sequence(self.axes_sequence_custom,
-                               self.canvas_sequence_custom, self.df_custom)
+        if (self.df is not None):
+            self.df_custom = self.df.copy()
+            print(self.df_custom)
+            self.df_custom['RF'].Amp = self.spinBox_RF.value()
+            print(self.df_custom)
+            self.plotting_sequence(self.axes_sequence_custom, self.canvas_sequence_custom, self.df_custom)
 
-    def clear_all(self, axes):
-        # self.figure_sequence.cla()
-
-        for axis_1 in axes:
-
-            axis_1.clear()
+    def clear_all(self):
+        for axis, axis_custom in zip(self.axes_sequence, self.axes_sequence_custom):
+            axis.clear()
+            axis_custom.clear()
+        self.canvas_sequence.draw()
+        self.canvas_sequence_custom.draw()
 
     def phantom_read(self):
         phantom_path = QFileDialog.getOpenFileName(self, "Open File", "src/docs/phantom images", filter="Images files ("
                                                                                                         "*.jpg *.jpeg "
                                                                                                         "*.png)")[0]
-        if phantom_path == "":
-            pass
-        else:
-            img = cv2.imread(phantom_path)
-            img = cv2.resize(img, (276, 253), interpolation=cv2.INTER_AREA)
-            self.axes_Orig_Spat.imshow(img, cmap='gray')
+        if phantom_path != "":
+            img = cv2.imread(phantom_path, cv2.IMREAD_GRAYSCALE)
+            w, h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(
+                self.figure_Orig_Spat.get_figheight() * self.figure_Orig_Spat.dpi)
+            img = cv2.resize(img, (w, h), interpolation=cv2.INTER_AREA)
+            self.axis_Orig_Spat.imshow(img, cmap='gray')
             self.canvas_Orig_Spat.draw()
+
+            # Compute the Fourier Transform of the image
+            f = np.fft.fft2(img)
+
+            # Shift the zero-frequency component to the center of the spectrum
+            fshift = np.fft.fftshift(f)
+
+            # Compute the magnitude spectrum of the Fourier Transform
+            magnitude_spectrum = 20 * np.log(np.abs(fshift))
+
+            self.axis_Orig_Fourier.imshow(magnitude_spectrum, cmap='gray')
+            self.canvas_Orig_Fourier.draw()
 
     def phantom_layout(self):
 
         ################ Phantom Original Layout #######################
 
         self.figure_Orig_Fourier = Figure(figsize=(20, 20), dpi=100)
-        self.axes_Orig_Fourier = self.figure_Orig_Fourier.add_subplot()
+        self.axis_Orig_Fourier = self.figure_Orig_Fourier.add_subplot()
         self.canvas_Orig_Fourier = FigureCanvas(self.figure_Orig_Fourier)
-        self.canvas_Orig_Fourier.figure.set_facecolor("#19232D")
-        self.axes_Orig_Fourier.set_facecolor('black')
+        self.figure_Orig_Fourier.subplots_adjust(left=0, right=1, bottom=0, top=1)
+        self.axis_Orig_Fourier.set_facecolor('black')
         self.gridLayout.addWidget(self.canvas_Orig_Fourier)
 
         self.figure_Orig_Spat = Figure(figsize=(20, 20), dpi=100)
-        self.axes_Orig_Spat = self.figure_Orig_Spat.add_subplot()
+        self.axis_Orig_Spat = self.figure_Orig_Spat.add_subplot()
         self.canvas_Orig_Spat = FigureCanvas(self.figure_Orig_Spat)
-        self.canvas_Orig_Spat.figure.set_facecolor("#19232D")
-        self.axes_Orig_Spat.set_facecolor('black')
+        self.figure_Orig_Spat.subplots_adjust(left=0, right=1, bottom=0, top=1)
+        self.axis_Orig_Spat.set_facecolor('black')
         self.gridLayout.addWidget(self.canvas_Orig_Spat)
 
         self.figure_kspace = Figure(figsize=(20, 20), dpi=100)
-        self.axes_kspace = self.figure_kspace.add_subplot()
+        self.axis_kspace = self.figure_kspace.add_subplot()
         self.canvas_kspace = FigureCanvas(self.figure_kspace)
-        self.canvas_kspace.figure.set_facecolor("#19232D")
-        self.axes_kspace.set_facecolor('black')
+        self.figure_kspace.subplots_adjust(left=0, right=1, bottom=0, top=1)
+        self.canvas_kspace.figure.set_facecolor('black')
+        self.axis_kspace.set_facecolor('black')
 
         self.gridLayout_2.addWidget(self.canvas_kspace)
 
         self.figure_reconstruct = Figure(figsize=(20, 20), dpi=100)
-        self.axes_reconstruct = self.figure_reconstruct.add_subplot()
+        self.axis_reconstruct = self.figure_reconstruct.add_subplot()
         self.canvas_reconstruct = FigureCanvas(self.figure_reconstruct)
-        self.canvas_reconstruct.figure.set_facecolor("#19232D")
-        self.axes_reconstruct.set_facecolor('black')
-
+        self.figure_reconstruct.subplots_adjust(left=0, right=1, bottom=0, top=1)
+        self.axis_reconstruct.set_facecolor('black')
         self.gridLayout_2.addWidget(self.canvas_reconstruct)
 
-        self.axes_phantom = [self.axes_Orig_Spat, self.axes_Orig_Fourier,
-                             self.axes_kspace, self.axes_reconstruct]
+        self.axes_phantom = [self.axis_Orig_Spat, self.axis_Orig_Fourier,
+                             self.axis_kspace, self.axis_reconstruct]
         for axis in self.axes_phantom:  # removing axes from the figure
             axis.set_xticks([])
             axis.set_yticks([])
