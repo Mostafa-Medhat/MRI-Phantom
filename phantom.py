@@ -28,6 +28,7 @@ from scipy.spatial.transform import Rotation as R
 # import numpy as np
 from collections import Counter
 import cmath
+import threading
 
 from matplotlib.figure import Figure
 from scipy.stats import norm
@@ -215,6 +216,7 @@ class Phantom(qtw.QWidget):
             axis.set_yticks([])
 
     def phantom_read(self):
+
         phantom_path = QFileDialog.getOpenFileName(self, "Open File", "src/docs/phantom images", filter="Images files ("
                                                                                                         "*.jpg *.jpeg "
                                                                                                         "*.png)")[0]
@@ -239,7 +241,10 @@ class Phantom(qtw.QWidget):
             self.canvas_Orig_Fourier.draw()
 
             # Generate_kspace
-            self.generate_kspace()
+            StreamThread = threading.Thread(target=self.generate_kspace )
+            StreamThread.daemon = True
+            StreamThread.start()
+            # self.generate_kspace()
 
     def generate_kspace(self):
 
@@ -248,6 +253,9 @@ class Phantom(qtw.QWidget):
         IMG_vector = np.zeros((IMG.shape[0], IMG.shape[1], 3), dtype=np.float_)
         IMG_K_Space = np.zeros((IMG.shape[0], IMG.shape[1]), dtype=np.complex_)
         X_Rotation = self.Rx(np.radians(90)) * self.Ry(0) * self.Rz(0)
+
+        self.axis_kspace.imshow(abs((IMG_K_Space)), cmap='gray')
+        self.canvas_kspace.draw()
 
         for Krow in range(IMG.shape[0]):
             print(Krow)
@@ -269,7 +277,7 @@ class Phantom(qtw.QWidget):
                 for j in range(0, IMG.shape[1]):
                     IMG_vector[i][j] = IMG_vector[i][j] * Z_Rotation
 
-                    # simulate Gx
+            # simulate Gx
             for Kcol in range(0, IMG.shape[1]):
                 # stepi = 2*np.pi/(IMG.shape[0])*(Krow)
                 Gx_phase = 2 * np.pi / (IMG.shape[0]) * (Kcol)
@@ -281,6 +289,8 @@ class Phantom(qtw.QWidget):
                         IMG_K_Space[Krow][Kcol] += (
                                 np.sqrt(np.square(IMG_vector[i][j][0]) + np.square(IMG_vector[i][j][1])) * np.exp(
                             complex(0, -(Gy_Phase * i + Gx_phase * j))))
+            self.axis_kspace.imshow(20 * np.log(abs(np.fft.fftshift(IMG_K_Space))), cmap='gray')
+            self.canvas_kspace.draw()
 
         IMG_K_Space_shift = np.fft.fftshift(IMG_K_Space)
 
@@ -292,6 +302,8 @@ class Phantom(qtw.QWidget):
         self.canvas_kspace.draw()
         self.axis_reconstruct.imshow(abs(IMG_back), cmap='gray')
         self.canvas_reconstruct.draw()
+        print("finished generating K Space")
+        return
 
     def Rx(self, theta):
         return np.matrix([[1, 0, 0],
