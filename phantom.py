@@ -255,7 +255,7 @@ class Phantom(qtw.QWidget):
     def start_threading(self):
         # Generate_kspace
         StreamThread = threading.Thread(target=self.generate_kspace)
-        StreamThread.daemon = True
+        # StreamThread.daemon = True
         StreamThread.start()
 
             
