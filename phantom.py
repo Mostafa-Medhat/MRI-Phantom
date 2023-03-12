@@ -248,7 +248,7 @@ class Phantom(qtw.QWidget):
             # Compute the magnitude spectrum of the Fourier Transform
             self.axis_Orig_Fourier.imshow(magnitude_spectrum, cmap='gray')
             self.canvas_Orig_Fourier.draw()
-<<<<<<< Updated upstream
+
 
             self.start_threading()
 
@@ -257,16 +257,9 @@ class Phantom(qtw.QWidget):
         StreamThread = threading.Thread(target=self.generate_kspace)
         StreamThread.daemon = True
         StreamThread.start()
-=======
+
             
-            # Generate_kspace
-            StreamThread = threading.Thread(target=self.generate_kspace )
-            # print("thread status ",StreamThread.is_alive())
-            # StreamThread.daemon = True
-            StreamThread.start()
-            # print(StreamThread.run())
-            # self.generate_kspace()
->>>>>>> Stashed changes
+            
 
     def generate_kspace(self):
 
