@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import sys
+import time
 import numpy as np
 import qdarkstyle
 from PyQt5 import QtWidgets, uic
@@ -43,6 +44,8 @@ class Phantom(qtw.QWidget):
 
         self.df = None
         self.df_custom = None
+        self.Running_K_Space = 0
+        self.Reload_K_Space = 0
 
         self.figure_sequence = Figure(dpi=80)
         self.figure_sequence_custom = Figure(dpi=80)
@@ -215,13 +218,18 @@ class Phantom(qtw.QWidget):
         for axis in self.axes_phantom:  # removing axes from the figure
             axis.set_xticks([])
             axis.set_yticks([])
-
+    
     def phantom_read(self):
 
         phantom_path = QFileDialog.getOpenFileName(self, "Open File", "src/docs/phantom images", filter="Images files ("
                                                                                                         "*.jpg *.jpeg "
-                                                                                                        "*.png)")[0]
+                                                                                                       "*.png)")[0]
         if phantom_path != "":
+            # print("running kspace",self.Running_K_Space)
+            if self.Running_K_Space == 1:
+                self.Reload_K_Space = 1
+            else:
+                self.Reload_K_Space = 0
             self.img = cv2.imread(phantom_path, cv2.IMREAD_GRAYSCALE)
             w, h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(
                 self.figure_Orig_Spat.get_figheight() * self.figure_Orig_Spat.dpi)
@@ -240,6 +248,7 @@ class Phantom(qtw.QWidget):
             # Compute the magnitude spectrum of the Fourier Transform
             self.axis_Orig_Fourier.imshow(magnitude_spectrum, cmap='gray')
             self.canvas_Orig_Fourier.draw()
+<<<<<<< Updated upstream
 
             self.start_threading()
 
@@ -248,6 +257,16 @@ class Phantom(qtw.QWidget):
         StreamThread = threading.Thread(target=self.generate_kspace)
         StreamThread.daemon = True
         StreamThread.start()
+=======
+            
+            # Generate_kspace
+            StreamThread = threading.Thread(target=self.generate_kspace )
+            # print("thread status ",StreamThread.is_alive())
+            # StreamThread.daemon = True
+            StreamThread.start()
+            # print(StreamThread.run())
+            # self.generate_kspace()
+>>>>>>> Stashed changes
 
     def generate_kspace(self):
 
@@ -265,6 +284,13 @@ class Phantom(qtw.QWidget):
 
 
         for Krow in range(IMG.shape[0]):
+            self.Running_K_Space = 1
+            # print("reload Kspace",self.Reload_K_Space)
+            if self.Reload_K_Space == 1:
+                Krow = 0
+                IMG_K_Space[:,:] = 0
+                self.Reload_K_Space = 0
+                return
             print(Krow)
             Gy_Phase = ((2 * np.pi) / IMG.shape[0]) * Krow
             IMG_vector[:, :, :] = 0
@@ -288,9 +314,9 @@ class Phantom(qtw.QWidget):
             for Kcol in range(0, IMG.shape[1]):
                 # stepi = 2*np.pi/(IMG.shape[0])*(Krow)
                 Gx_phase = 2 * np.pi / (IMG.shape[0]) * (Kcol)
-                for i in range(0, IMG.shape[1]):
+                for i in range(0, IMG.shape[0]):
                     Z_Rotation = self.Rx(0) * self.Ry(0) * self.Rz((((2 * np.pi) / IMG.shape[0]) * i))
-                    for j in range(0, IMG.shape[0]):
+                    for j in range(0, IMG.shape[1]):
                         # theta=Gy_Phase*i + stepj*j
                         IMG_vector[j][i] = IMG_vector[j][i] * Z_Rotation
                         IMG_K_Space[Krow][Kcol] += (
@@ -298,6 +324,9 @@ class Phantom(qtw.QWidget):
                             complex(0, -(Gy_Phase * i + Gx_phase * j))))
             self.axis_kspace.imshow(20 * np.log(abs(np.fft.fftshift(IMG_K_Space))), cmap='gray')
             self.canvas_kspace.draw()
+            IMG_back = np.fft.ifft2(np.fft.ifftshift(IMG_K_Space))
+            self.axis_reconstruct.imshow(abs(IMG_back), cmap='gray')
+            self.canvas_reconstruct.draw()
 
         IMG_K_Space_shift = np.fft.fftshift(IMG_K_Space)
 
@@ -310,6 +339,7 @@ class Phantom(qtw.QWidget):
         self.axis_reconstruct.imshow(abs(IMG_back), cmap='gray')
         self.canvas_reconstruct.draw()
         print("finished generating K Space")
+        self.Running_K_Space = 0
         return
 
     def Rx(self, theta):
