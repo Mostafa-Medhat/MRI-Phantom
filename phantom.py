@@ -65,7 +65,10 @@ class Phantom(qtw.QWidget):
         self.pushButton_apply.clicked.connect(lambda: self.custom_sequence())
         self.pushButton_clear.clicked.connect(lambda: self.clear_all())
         self.pushButton_openPhantom.clicked.connect(lambda: self.phantom_read())
+        self.comboBox_kspace_size.currentIndexChanged.connect(lambda: self.start_threding())
 
+        # size = int(self.comboBox_kspace_size.currentText())
+        # print(size, type(size))
         # self.sequence_custom_layout()
 
     def sequence_layout(self, figure, layout):
@@ -240,22 +243,28 @@ class Phantom(qtw.QWidget):
             self.axis_Orig_Fourier.imshow(magnitude_spectrum, cmap='gray')
             self.canvas_Orig_Fourier.draw()
 
-            # Generate_kspace
-            StreamThread = threading.Thread(target=self.generate_kspace )
-            StreamThread.daemon = True
-            StreamThread.start()
-            # self.generate_kspace()
+            self.start_threding()
+
+    def start_threding(self):
+        # Generate_kspace
+        StreamThread = threading.Thread(target=self.generate_kspace)
+        StreamThread.daemon = True
+        StreamThread.start()
 
     def generate_kspace(self):
 
-        IMG = cv2.resize(self.img, (50, 50))
+        self.axis_kspace.clear()
+        self.canvas_kspace.draw()
+
+        IMG = cv2.resize(self.img,
+                         (int(self.comboBox_kspace_size.currentText()), int(self.comboBox_kspace_size.currentText())))
 
         IMG_vector = np.zeros((IMG.shape[0], IMG.shape[1], 3), dtype=np.float_)
         IMG_K_Space = np.zeros((IMG.shape[0], IMG.shape[1]), dtype=np.complex_)
         X_Rotation = self.Rx(np.radians(90)) * self.Ry(0) * self.Rz(0)
 
         self.axis_kspace.imshow(abs((IMG_K_Space)), cmap='gray')
-        self.canvas_kspace.draw()
+
 
         for Krow in range(IMG.shape[0]):
             print(Krow)
