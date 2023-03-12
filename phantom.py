@@ -67,8 +67,6 @@ class Phantom(qtw.QWidget):
         self.pushButton_openPhantom.clicked.connect(lambda: self.phantom_read())
         self.comboBox_kspace_size.currentIndexChanged.connect(lambda: self.start_threading())
 
-        size = int(self.comboBox_kspace_size.currentText())
-        print(size, type(size))
         # self.sequence_custom_layout()
 
     def sequence_layout(self, figure, layout):
