@@ -226,10 +226,10 @@ class Phantom(qtw.QWidget):
                                                                                                        "*.png)")[0]
         if phantom_path != "":
             # print("running kspace",self.Running_K_Space)
-            if self.Running_K_Space == 1:
-                self.Reload_K_Space = 1
-            else:
-                self.Reload_K_Space = 0
+            # if self.Running_K_Space == 1:
+            #     self.Reload_K_Space = 1
+            # else:
+            #     self.Reload_K_Space = 0
             self.img = cv2.imread(phantom_path, cv2.IMREAD_GRAYSCALE)
             w, h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(
                 self.figure_Orig_Spat.get_figheight() * self.figure_Orig_Spat.dpi)
@@ -253,9 +253,16 @@ class Phantom(qtw.QWidget):
             self.start_threading()
 
     def start_threading(self):
+
+        if self.Running_K_Space == 1:
+            self.Reload_K_Space = 1
+        else:
+            self.Reload_K_Space = 0
+
+        time.sleep(2)
         # Generate_kspace
         StreamThread = threading.Thread(target=self.generate_kspace)
-        StreamThread.daemon = True
+        # StreamThread.daemon = True
         StreamThread.start()
 
             
