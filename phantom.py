@@ -65,7 +65,7 @@ class Phantom(qtw.QWidget):
         self.pushButton_apply.clicked.connect(lambda: self.custom_sequence())
         self.pushButton_clear.clicked.connect(lambda: self.clear_all())
         self.pushButton_openPhantom.clicked.connect(lambda: self.phantom_read())
-        self.comboBox_kspace_size.currentIndexChanged.connect(lambda: self.start_threding())
+        self.comboBox_kspace_size.currentIndexChanged.connect(lambda: self.start_threading())
 
         # size = int(self.comboBox_kspace_size.currentText())
         # print(size, type(size))
@@ -243,9 +243,9 @@ class Phantom(qtw.QWidget):
             self.axis_Orig_Fourier.imshow(magnitude_spectrum, cmap='gray')
             self.canvas_Orig_Fourier.draw()
 
-            self.start_threding()
+            self.start_threading()
 
-    def start_threding(self):
+    def start_threading(self):
         # Generate_kspace
         StreamThread = threading.Thread(target=self.generate_kspace)
         StreamThread.daemon = True
