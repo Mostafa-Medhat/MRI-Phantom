@@ -323,6 +323,7 @@ class Phantom(qtw.QWidget):
                                 np.sqrt(np.square(IMG_vector[i][j][0]) + np.square(IMG_vector[i][j][1])) * np.exp(
                             complex(0, -(Gy_Phase * i + Gx_phase * j))))
             self.axis_kspace.imshow(20 * np.log(abs(np.fft.fftshift(IMG_K_Space))), cmap='gray')
+            self.axis_kspace.set_yticks([])
             self.canvas_kspace.draw()
             IMG_back = np.fft.ifft2(np.fft.ifftshift(IMG_K_Space))
             self.axis_reconstruct.imshow(abs(IMG_back), cmap='gray')
