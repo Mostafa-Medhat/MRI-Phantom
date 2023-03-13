@@ -1,5 +1,4 @@
 import os
-
 import cv2
 from PyQt5 import QtCore as qtc
 from PyQt5 import QtWidgets as qtw
@@ -118,15 +117,19 @@ class Phantom(qtw.QWidget):
         colors = ['b', 'g', 'blueviolet', 'orange', 'red']
         for color, axis in enumerate(axes):
             axis.clear()
-            axis.plot(np.linspace(0, dataFrame['RO'].Pos + dataFrame['RO'].Duration, 2), np.zeros(shape=2),
+            axis.plot(np.linspace(0, dataFrame['TR'].Pos, 2), np.zeros(shape=2),
                       color=colors[color],
                       linewidth=0.7)
+            axis.axvline(int(dataFrame["TE"].Pos), color='yellow')
+            axis.axvline(int(dataFrame["TR"].Pos), color='black')
 
         RF_Duration = np.linspace(-dataFrame['RF'].Duration / 2,
                                   dataFrame['RF'].Duration / 2, 100)
         axes[0].plot(RF_Duration + dataFrame['RF'].Duration / 2,
                      dataFrame['RF'].Amp * np.sinc(2 * RF_Duration),
                      color=colors[0])
+        axes[0].plot(RF_Duration + (dataFrame['RF'].Duration / 2) + dataFrame['TR'].Pos,
+                     dataFrame['RF'].Amp * np.sinc(2 * RF_Duration), color=colors[0])
         axes[0].set_ylabel("RF")
 
         #
@@ -161,6 +164,7 @@ class Phantom(qtw.QWidget):
             for axis, axis_custom in zip(self.axes_sequence, self.axes_sequence_custom):
                 ymin, ymax = axis.get_ylim()
                 axis_custom.set_ylim(ymin, ymax)
+
         #
         canvas.draw()
 
@@ -218,12 +222,12 @@ class Phantom(qtw.QWidget):
         for axis in self.axes_phantom:  # removing axes from the figure
             axis.set_xticks([])
             axis.set_yticks([])
-    
+
     def phantom_read(self):
 
         phantom_path = QFileDialog.getOpenFileName(self, "Open File", "src/docs/phantom images", filter="Images files ("
                                                                                                         "*.jpg *.jpeg "
-                                                                                                       "*.png)")[0]
+                                                                                                        "*.png)")[0]
         if phantom_path != "":
             # print("running kspace",self.Running_K_Space)
             # if self.Running_K_Space == 1:
@@ -249,7 +253,6 @@ class Phantom(qtw.QWidget):
             self.axis_Orig_Fourier.imshow(magnitude_spectrum, cmap='gray')
             self.canvas_Orig_Fourier.draw()
 
-
             self.start_threading()
 
     def start_threading(self):
@@ -265,9 +268,6 @@ class Phantom(qtw.QWidget):
         # StreamThread.daemon = True
         StreamThread.start()
 
-            
-            
-
     def generate_kspace(self):
 
         self.axis_kspace.clear()
@@ -282,13 +282,12 @@ class Phantom(qtw.QWidget):
 
         self.axis_kspace.imshow(abs((IMG_K_Space)), cmap='gray')
 
-
         for Krow in range(IMG.shape[0]):
             self.Running_K_Space = 1
             # print("reload Kspace",self.Reload_K_Space)
             if self.Reload_K_Space == 1:
                 Krow = 0
-                IMG_K_Space[:,:] = 0
+                IMG_K_Space[:, :] = 0
                 self.Reload_K_Space = 0
                 return
             print(Krow)
@@ -313,7 +312,7 @@ class Phantom(qtw.QWidget):
             # simulate Gx
             for Kcol in range(0, IMG.shape[1]):
                 # stepi = 2*np.pi/(IMG.shape[0])*(Krow)
-                Gx_phase = 2 * np.pi / (IMG.shape[0]) * (Kcol)
+                Gx_phase = 2 * np.pi / (IMG.shape[0]) * Kcol
                 for i in range(0, IMG.shape[0]):
                     Z_Rotation = self.Rx(0) * self.Ry(0) * self.Rz((((2 * np.pi) / IMG.shape[0]) * i))
                     for j in range(0, IMG.shape[1]):
