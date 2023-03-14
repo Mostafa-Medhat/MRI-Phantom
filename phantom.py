@@ -262,71 +262,14 @@ class Phantom(qtw.QWidget):
             while self.Reload_K_Space and multiprocessing.current_process().is_alive():
                 print("retrying")
                 time.sleep(1)
-                continue
-           
         else:
             self.Reload_K_Space = 0
 
-        
-        # print("running kspace in thread",self.Running_K_Space)
-        # time.sleep(2)
-        # print("running kspace in thread after delay",self.Running_K_Space)
-        # Generate_kspace
         K_Space_Thread = threading.Thread(target=self.generate_kspace)
-        # StreamThread.daemon = True
+        
         K_Space_Thread.start()
 
-            
-    # def apply_Vector_Rotations(self):
-
-    #     IMG = cv2.resize(self.img,
-    #                      (int(self.comboBox_kspace_size.currentText()), int(self.comboBox_kspace_size.currentText())))
-
-    #     IMG_vector = np.zeros((IMG.shape[0],IMG.shape[0], IMG.shape[1], 3), dtype=np.float_)
-    #     IMG_vector_final = np.zeros((IMG.shape[0],IMG.shape[1],IMG.shape[0], IMG.shape[1], 3), dtype=np.float_)
-    #     # IMG_K_Space = np.zeros((IMG.shape[0], IMG.shape[1]), dtype=np.complex_)
-        # X_Rotation = self.Rx(np.radians(90)) * self.Ry(0) * self.Rz(0)
-
-    #     # self.axis_kspace.imshow(abs((IMG_K_Space)), cmap='gray')
-
-
-    #     for Krow in range(IMG.shape[0]):
-    #         self.Running_K_Space = 1
-    #         # print("reload Kspace",self.Reload_K_Space)
-    #         # if self.Reload_K_Space == 1:
-    #         #     Krow = 0
-    #         #     IMG_K_Space[:,:] = 0
-    #         #     self.Reload_K_Space = 0
-    #         #     return
-    #         print(Krow)
-    #         Gy_Phase = ((2 * np.pi) / IMG.shape[0]) * Krow
-    #         IMG_vector[Krow,:, :, :] = 0
-
-    #         # construct our vectors
-    #         for i in range(0, IMG.shape[0]):
-    #             for j in range(0, IMG.shape[1]):
-    #                 IMG_vector[Krow][i][j][2] = IMG[i][j]
-
-    #         # simulate RF
-    #         for i in range(0, IMG.shape[0]):
-    #             for j in range(0, IMG.shape[1]):
-    #                 IMG_vector[Krow][i][j] = IMG_vector[Krow][i][j] * X_Rotation
-
-    #         # simulate Gy
-    #         for i in range(0, IMG.shape[0]):
-    #             Z_Rotation = self.Rx(0) * self.Ry(0) * self.Rz((Gy_Phase / IMG.shape[0]) + ((Gy_Phase / IMG.shape[0]) * i))
-    #             for j in range(0, IMG.shape[1]):
-    #                 IMG_vector[Krow][i][j] = IMG_vector[Krow][i][j] * Z_Rotation
-
-    #         # simulate Gx
-    #         for Kcol in range(0, IMG.shape[1]):
-                
-    #             for i in range(0, IMG.shape[0]):
-    #                 Z_Rotation = self.Rx(0) * self.Ry(0) * self.Rz((((2 * np.pi) / IMG.shape[0]) * i))
-    #                 for j in range(0, IMG.shape[1]):
-    #                     IMG_vector[Krow][j][i] = IMG_vector[Krow][j][i] * Z_Rotation
-    #                     IMG_vector_final[Krow][Kcol] = IMG_vector[Krow]
-    #     return IMG_vector_final
+    
 
     def generate_kspace(self):
 
