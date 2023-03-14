@@ -18,6 +18,8 @@ from PyQt5.QtWidgets import QFileDialog, QSizePolicy
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
+import multiprocessing
+
 from matplotlib import pyplot as plt
 import math as m
 # from skimage.color import rgb2gray
@@ -253,80 +255,142 @@ class Phantom(qtw.QWidget):
             self.start_threading()
 
     def start_threading(self):
-
+        # self.process = multiprocessing.Process(StreamThread)
+        
         if self.Running_K_Space == 1:
             self.Reload_K_Space = 1
+            while self.Reload_K_Space and multiprocessing.current_process().is_alive():
+                print("retrying")
+                time.sleep(1)
+                continue
+           
         else:
             self.Reload_K_Space = 0
 
-        time.sleep(2)
+        
+        # print("running kspace in thread",self.Running_K_Space)
+        # time.sleep(2)
+        # print("running kspace in thread after delay",self.Running_K_Space)
         # Generate_kspace
         StreamThread = threading.Thread(target=self.generate_kspace)
         # StreamThread.daemon = True
         StreamThread.start()
 
             
-            
+    # def apply_Vector_Rotations(self):
+
+    #     IMG = cv2.resize(self.img,
+    #                      (int(self.comboBox_kspace_size.currentText()), int(self.comboBox_kspace_size.currentText())))
+
+    #     IMG_vector = np.zeros((IMG.shape[0],IMG.shape[0], IMG.shape[1], 3), dtype=np.float_)
+    #     IMG_vector_final = np.zeros((IMG.shape[0],IMG.shape[1],IMG.shape[0], IMG.shape[1], 3), dtype=np.float_)
+    #     # IMG_K_Space = np.zeros((IMG.shape[0], IMG.shape[1]), dtype=np.complex_)
+        # X_Rotation = self.Rx(np.radians(90)) * self.Ry(0) * self.Rz(0)
+
+    #     # self.axis_kspace.imshow(abs((IMG_K_Space)), cmap='gray')
+
+
+    #     for Krow in range(IMG.shape[0]):
+    #         self.Running_K_Space = 1
+    #         # print("reload Kspace",self.Reload_K_Space)
+    #         # if self.Reload_K_Space == 1:
+    #         #     Krow = 0
+    #         #     IMG_K_Space[:,:] = 0
+    #         #     self.Reload_K_Space = 0
+    #         #     return
+    #         print(Krow)
+    #         Gy_Phase = ((2 * np.pi) / IMG.shape[0]) * Krow
+    #         IMG_vector[Krow,:, :, :] = 0
+
+    #         # construct our vectors
+    #         for i in range(0, IMG.shape[0]):
+    #             for j in range(0, IMG.shape[1]):
+    #                 IMG_vector[Krow][i][j][2] = IMG[i][j]
+
+    #         # simulate RF
+    #         for i in range(0, IMG.shape[0]):
+    #             for j in range(0, IMG.shape[1]):
+    #                 IMG_vector[Krow][i][j] = IMG_vector[Krow][i][j] * X_Rotation
+
+    #         # simulate Gy
+    #         for i in range(0, IMG.shape[0]):
+    #             Z_Rotation = self.Rx(0) * self.Ry(0) * self.Rz((Gy_Phase / IMG.shape[0]) + ((Gy_Phase / IMG.shape[0]) * i))
+    #             for j in range(0, IMG.shape[1]):
+    #                 IMG_vector[Krow][i][j] = IMG_vector[Krow][i][j] * Z_Rotation
+
+    #         # simulate Gx
+    #         for Kcol in range(0, IMG.shape[1]):
+                
+    #             for i in range(0, IMG.shape[0]):
+    #                 Z_Rotation = self.Rx(0) * self.Ry(0) * self.Rz((((2 * np.pi) / IMG.shape[0]) * i))
+    #                 for j in range(0, IMG.shape[1]):
+    #                     IMG_vector[Krow][j][i] = IMG_vector[Krow][j][i] * Z_Rotation
+    #                     IMG_vector_final[Krow][Kcol] = IMG_vector[Krow]
+    #     return IMG_vector_final
 
     def generate_kspace(self):
+
+        # print("reintering kspace function")
 
         self.axis_kspace.clear()
         self.canvas_kspace.draw()
 
         IMG = cv2.resize(self.img,
                          (int(self.comboBox_kspace_size.currentText()), int(self.comboBox_kspace_size.currentText())))
-
-        IMG_vector = np.zeros((IMG.shape[0], IMG.shape[1], 3), dtype=np.float_)
+        
+        
         IMG_K_Space = np.zeros((IMG.shape[0], IMG.shape[1]), dtype=np.complex_)
-        X_Rotation = self.Rx(np.radians(90)) * self.Ry(0) * self.Rz(0)
+        
+        IMG_vector = np.zeros((IMG.shape[0],IMG.shape[1],3),dtype=np.float_)
 
         self.axis_kspace.imshow(abs((IMG_K_Space)), cmap='gray')
 
+        Min_KX,Max_KX,Min_KY,Max_KY = self.setGradientLimits(IMG,start_from_middel=1)
 
-        for Krow in range(IMG.shape[0]):
+        
+        for Ky in range(Min_KY, Max_KY):
+
             self.Running_K_Space = 1
-            # print("reload Kspace",self.Reload_K_Space)
-            if self.Reload_K_Space == 1:
-                Krow = 0
-                IMG_K_Space[:,:] = 0
-                self.Reload_K_Space = 0
-                return
-            print(Krow)
-            Gy_Phase = ((2 * np.pi) / IMG.shape[0]) * Krow
-            IMG_vector[:, :, :] = 0
-            # construct our vectors
-            for i in range(0, IMG.shape[0]):
-                for j in range(0, IMG.shape[1]):
+
+            for i in range(0,(Max_KY-Min_KY)):
+                for j in range(0,(Max_KX-Min_KX)):
                     IMG_vector[i][j][2] = IMG[i][j]
+            
+            RF_RotatedMatrix = self.RF_Rotation(IMG_vector, 90)
+            
+            for Kx in range(Min_KX, Max_KX):
 
-            # simulate RF
-            for i in range(0, IMG.shape[0]):
-                for j in range(0, IMG.shape[1]):
-                    IMG_vector[i][j] = IMG_vector[i][j] * X_Rotation
+                if self.Reload_K_Space == 1:
+                    Ky = 0
+                    IMG_vector[:,:,:] = 0
+                    # print("reloading",Krow)
+                    IMG_K_Space[:,:] = 0
+                    self.Reload_K_Space = 0
+                    self.Running_K_Space = 0
+                    return
 
-            # simulate Gy
-            for i in range(0, IMG.shape[0]):
-                Z_Rotation = self.Rx(0) * self.Ry(0) * self.Rz((Gy_Phase / IMG.shape[0]) + ((Gy_Phase / IMG.shape[0]) * i))
-                for j in range(0, IMG.shape[1]):
-                    IMG_vector[i][j] = IMG_vector[i][j] * Z_Rotation
-
-            # simulate Gx
-            for Kcol in range(0, IMG.shape[1]):
-                # stepi = 2*np.pi/(IMG.shape[0])*(Krow)
-                Gx_phase = 2 * np.pi / (IMG.shape[0]) * (Kcol)
-                for i in range(0, IMG.shape[0]):
-                    Z_Rotation = self.Rx(0) * self.Ry(0) * self.Rz((((2 * np.pi) / IMG.shape[0]) * i))
-                    for j in range(0, IMG.shape[1]):
-                        # theta=Gy_Phase*i + stepj*j
-                        IMG_vector[j][i] = IMG_vector[j][i] * Z_Rotation
-                        IMG_K_Space[Krow][Kcol] += (
-                                np.sqrt(np.square(IMG_vector[i][j][0]) + np.square(IMG_vector[i][j][1])) * np.exp(
-                            complex(0, -(Gy_Phase * i + Gx_phase * j))))
+                Gy_step = (360 / (Max_KY-Min_KY)) * Ky
+                Gx_step = (360 / (Max_KX-Min_KX)) * Kx
+                Gxy_EncodedMatrix = self.Gxy_Rotation(RF_RotatedMatrix, Gy_step, Gx_step)
+                sigmaX = np.sum(Gxy_EncodedMatrix[:, :, 0])
+                sigmaY = np.sum(Gxy_EncodedMatrix[:, :, 1])
+                valueToAdd = complex(sigmaX, sigmaY)
+                IMG_K_Space[-Ky, -Kx] = valueToAdd
+                
+            IMG_vector[:,:,:] = 0
+                    
             self.axis_kspace.imshow(20 * np.log(abs(np.fft.fftshift(IMG_K_Space))), cmap='gray')
             self.canvas_kspace.draw()
             IMG_back = np.fft.ifft2(np.fft.ifftshift(IMG_K_Space))
+            
             self.axis_reconstruct.imshow(abs(IMG_back), cmap='gray')
             self.canvas_reconstruct.draw()
+
+            print(Ky-Min_KY+1)
+
+       
+        self.Running_K_Space = 0
+        self.Reload_K_Space = 0
 
         IMG_K_Space_shift = np.fft.fftshift(IMG_K_Space)
 
@@ -339,7 +403,7 @@ class Phantom(qtw.QWidget):
         self.axis_reconstruct.imshow(abs(IMG_back), cmap='gray')
         self.canvas_reconstruct.draw()
         print("finished generating K Space")
-        self.Running_K_Space = 0
+        
         return
 
     def Rx(self, theta):
@@ -356,3 +420,41 @@ class Phantom(qtw.QWidget):
         return np.matrix([[m.cos(theta), -m.sin(theta), 0],
                           [m.sin(theta), m.cos(theta), 0],
                           [0, 0, 1]])
+    
+    def RF_Rotation(self,matrix,RF_rotation_deg):
+        RF_Rotated_Matrix = np.zeros(np.shape(matrix))
+
+        for i in range(RF_Rotated_Matrix.shape[0]):
+            for j in range(RF_Rotated_Matrix.shape[1]):
+                RF_Rotated_Matrix[i , j] = np.dot(self.Rx(np.radians(RF_rotation_deg)),matrix[i,j])
+
+        return RF_Rotated_Matrix
+
+    def Gxy_Rotation(self,matrix,Gy_step_deg,Gx_step_deg):
+        Gxy_Rotated_Matrix = np.zeros(np.shape(matrix))
+
+        for i in range(Gxy_Rotated_Matrix.shape[0]):
+            for j in range(Gxy_Rotated_Matrix.shape[1]):
+                Gxy_rotation_Theta = np.radians(Gy_step_deg * i + Gx_step_deg * j)
+                Gxy_Rotated_Matrix[i , j] = np.dot(self.Rz(Gxy_rotation_Theta),matrix[i,j])
+
+        return Gxy_Rotated_Matrix
+
+
+    def setGradientLimits(self,matrix,start_from_middel = 0):
+        Set_Min_KX = 0
+        Set_Max_KX = 0
+        Set_Min_KY = 0
+        Set_Max_KY = 0
+        
+        if start_from_middel:
+            Set_Min_KX = int(-matrix.shape[1]/2)
+            Set_Max_KX = int(matrix.shape[1]/2)
+            Set_Min_KY = int(-matrix.shape[0]/2)
+            Set_Max_KY = int(matrix.shape[0]/2)
+        else:
+            Set_Min_KX = int(0)
+            Set_Max_KX = int(matrix.shape[1])
+            Set_Min_KY = int(0)
+            Set_Max_KY = int(matrix.shape[0])
+        return Set_Min_KX,Set_Max_KX,Set_Min_KY,Set_Max_KY
