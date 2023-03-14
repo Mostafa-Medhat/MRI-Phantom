@@ -70,7 +70,7 @@ class Phantom(qtw.QWidget):
         self.pushButton_apply.clicked.connect(lambda: self.custom_sequence())
         self.pushButton_clear.clicked.connect(lambda: self.clear_all())
         self.pushButton_openPhantom.clicked.connect(lambda: self.phantom_read())
-        self.comboBox_kspace_size.currentIndexChanged.connect(lambda: self.start_threading())
+        self.comboBox_kspace_size.currentIndexChanged.connect(lambda: self.start_K_Space_threading())
 
         # self.sequence_custom_layout()
 
@@ -252,9 +252,9 @@ class Phantom(qtw.QWidget):
             self.canvas_Orig_Fourier.draw()
 
 
-            self.start_threading()
+            self.start_K_Space_threading()
 
-    def start_threading(self):
+    def start_K_Space_threading(self):
         # self.process = multiprocessing.Process(StreamThread)
         
         if self.Running_K_Space == 1:
@@ -272,9 +272,9 @@ class Phantom(qtw.QWidget):
         # time.sleep(2)
         # print("running kspace in thread after delay",self.Running_K_Space)
         # Generate_kspace
-        StreamThread = threading.Thread(target=self.generate_kspace)
+        K_Space_Thread = threading.Thread(target=self.generate_kspace)
         # StreamThread.daemon = True
-        StreamThread.start()
+        K_Space_Thread.start()
 
             
     # def apply_Vector_Rotations(self):
@@ -345,17 +345,17 @@ class Phantom(qtw.QWidget):
 
         self.axis_kspace.imshow(abs((IMG_K_Space)), cmap='gray')
 
-        Min_KX,Max_KX,Min_KY,Max_KY = self.setGradientLimits(IMG,start_from_middel=1)
+        Min_KX,Max_KX,Min_KY,Max_KY = self.setGradientLimits(IMG,Gx_zero_in_middel=1,Gy_zero_in_middel=1)
 
+        # IMG_vector[:,:,:] = 0
+
+        #initialize our vectors
+        IMG_vector[:,:,2] = IMG[:,:]
         
         for Ky in range(Min_KY, Max_KY):
 
             self.Running_K_Space = 1
 
-            IMG_vector[:,:,:] = 0
-
-            #initialize our vectors
-            IMG_vector[:,:,2] = IMG[:,:]
             
             #simulate the RF effect on our Matrix
             RF_RotatedMatrix = self.RF_Rotation(IMG_vector, 90)
@@ -454,20 +454,25 @@ class Phantom(qtw.QWidget):
         return Gxy_Rotated_Matrix
 
     #function to set the limits of Gradients (ex: [0,matrix row size] or [-matrix row size/2,matrix row size/2])
-    def setGradientLimits(self,matrix,start_from_middel = 0):
+    def setGradientLimits(self,matrix,Gx_zero_in_middel = 0,Gy_zero_in_middel = 0):
         Set_Min_KX = 0
         Set_Max_KX = 0
         Set_Min_KY = 0
         Set_Max_KY = 0
         
-        if start_from_middel:
+        if Gx_zero_in_middel:
             Set_Min_KX = int(-matrix.shape[1]/2)
             Set_Max_KX = int(matrix.shape[1]/2)
-            Set_Min_KY = int(-matrix.shape[0]/2)
-            Set_Max_KY = int(matrix.shape[0]/2)
+            
         else:
             Set_Min_KX = int(0)
             Set_Max_KX = int(matrix.shape[1])
+            
+
+        if Gy_zero_in_middel:
+            Set_Min_KY = int(-matrix.shape[0]/2)
+            Set_Max_KY = int(matrix.shape[0]/2)
+        else:
             Set_Min_KY = int(0)
             Set_Max_KY = int(matrix.shape[0])
         return Set_Min_KX,Set_Max_KX,Set_Min_KY,Set_Max_KY
