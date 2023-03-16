@@ -18,7 +18,6 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import multiprocessing
 
-
 from matplotlib import pyplot as plt
 import math as m
 # from skimage.color import rgb2gray
@@ -43,6 +42,7 @@ class Phantom(qtw.QWidget):
         uic.loadUi("src/ui/Phantom.ui", self)
         # self.splitter.setWidth(50, 1)
 
+        self.i = 0
         self.df = None
         self.df_custom = None
         self.Running_K_Space = 0
@@ -70,6 +70,8 @@ class Phantom(qtw.QWidget):
         self.pushButton_clear.clicked.connect(lambda: self.clear_all())
         self.pushButton_openPhantom.clicked.connect(lambda: self.phantom_read())
         self.comboBox_kspace_size.currentIndexChanged.connect(lambda: self.start_K_Space_threading())
+        self.horizontalSlider_brightness.sliderReleased.connect(lambda: self.phantom_brightness())
+        self.horizontalSlider_contrast.sliderReleased.connect(lambda: self.phantom_contrast())
 
         # self.sequence_custom_layout()
 
@@ -259,7 +261,7 @@ class Phantom(qtw.QWidget):
 
     def start_K_Space_threading(self):
         # self.process = multiprocessing.Process(StreamThread)
-        
+
         if self.Running_K_Space == 1:
             self.Reload_K_Space = 1
             while self.Reload_K_Space and multiprocessing.current_process().is_alive():
@@ -269,10 +271,8 @@ class Phantom(qtw.QWidget):
             self.Reload_K_Space = 0
 
         K_Space_Thread = threading.Thread(target=self.generate_kspace)
-        
-        K_Space_Thread.start()
 
-    
+        K_Space_Thread.start()
 
     def generate_kspace(self):
 
@@ -283,72 +283,68 @@ class Phantom(qtw.QWidget):
 
         IMG = cv2.resize(self.img,
                          (int(self.comboBox_kspace_size.currentText()), int(self.comboBox_kspace_size.currentText())))
-        
-        
+
         IMG_K_Space = np.zeros((IMG.shape[0], IMG.shape[1]), dtype=np.complex_)
-        
-        IMG_vector = np.zeros((IMG.shape[0],IMG.shape[1],3),dtype=np.float_)
+
+        IMG_vector = np.zeros((IMG.shape[0], IMG.shape[1], 3), dtype=np.float_)
 
         self.axis_kspace.imshow(abs((IMG_K_Space)), cmap='gray')
 
-        Min_KX,Max_KX,Min_KY,Max_KY = self.setGradientLimits(IMG,Gx_zero_in_middel=1,Gy_zero_in_middel=1)
+        Min_KX, Max_KX, Min_KY, Max_KY = self.setGradientLimits(IMG, Gx_zero_in_middel=1, Gy_zero_in_middel=1)
 
         # IMG_vector[:,:,:] = 0
 
-        #initialize our vectors
-        IMG_vector[:,:,2] = IMG[:,:]
-        
+        # initialize our vectors
+        IMG_vector[:, :, 2] = IMG[:, :]
+
         for Ky in range(Min_KY, Max_KY):
 
             self.Running_K_Space = 1
 
-            
-            #simulate the RF effect on our Matrix
+            # simulate the RF effect on our Matrix
             RF_RotatedMatrix = self.RF_Rotation(IMG_vector, 90)
-            
+
             for Kx in range(Min_KX, Max_KX):
-                
-                #check if k_Space relaod is needed 
+
+                # check if k_Space relaod is needed
                 if self.Reload_K_Space == 1:
                     self.Reload_K_Space = 0
                     self.Running_K_Space = 0
                     return
 
-                #changing the Gy & Gx steps
-                Gy_step = (360 / (Max_KY-Min_KY)) * Ky
-                Gx_step = (360 / (Max_KX-Min_KX)) * Kx
+                # changing the Gy & Gx steps
+                Gy_step = (360 / (Max_KY - Min_KY)) * Ky
+                Gx_step = (360 / (Max_KX - Min_KX)) * Kx
 
-                #Apply the Gx & Gy effect to our vectors
+                # Apply the Gx & Gy effect to our vectors
                 Gxy_EncodedMatrix = self.Gxy_Rotation(RF_RotatedMatrix, Gy_step, Gx_step)
 
-                #sum all the vectors projections in x
+                # sum all the vectors projections in x
                 sigmaX = np.sum(Gxy_EncodedMatrix[:, :, 0])
-                #sum all the vectors projections in y
+                # sum all the vectors projections in y
                 sigmaY = np.sum(Gxy_EncodedMatrix[:, :, 1])
-                #set sigmaX as real part and sigmaY as imaginary part of the K_Space
+                # set sigmaX as real part and sigmaY as imaginary part of the K_Space
                 valueToAdd = complex(sigmaX, sigmaY)
-                #save the value to the K_Space at it's relative place acording to Ky and Kx
+                # save the value to the K_Space at it's relative place acording to Ky and Kx
                 IMG_K_Space[-Ky, -Kx] = valueToAdd
-                
-            
-            #updates the K_space image for every row added to it with the addition of applying fftshift to it
+
+            # updates the K_space image for every row added to it with the addition of applying fftshift to it
             self.axis_kspace.imshow(20 * np.log(abs(np.fft.fftshift(IMG_K_Space))), cmap='gray')
             self.canvas_kspace.draw()
-            #update the reconstructed image for every row added to the K_Space
+            # update the reconstructed image for every row added to the K_Space
             IMG_back = np.fft.ifft2(np.fft.ifftshift(IMG_K_Space))
             self.axis_reconstruct.imshow(abs(IMG_back), cmap='gray')
             self.canvas_reconstruct.draw()
-            #print the progress of our K_Space
-            print(Ky-Min_KY+1)
+            # print the progress of our K_Space
+            print(Ky - Min_KY + 1)
 
-       
         self.Running_K_Space = 0
         self.Reload_K_Space = 0
 
         IMG_K_Space_shift = np.fft.fftshift(IMG_K_Space)
-        #Rescale the output of the K_Space
+        # Rescale the output of the K_Space
         k_space_magnitude_spectrum = 20 * np.log(np.abs(IMG_K_Space_shift))
-        #reconstruct our image back from the generated k_Space
+        # reconstruct our image back from the generated k_Space
         IMG_back = np.fft.ifft2(np.fft.ifftshift(IMG_K_Space_shift))
 
         self.axis_kspace.imshow(k_space_magnitude_spectrum, cmap='gray')
@@ -356,7 +352,7 @@ class Phantom(qtw.QWidget):
         self.axis_reconstruct.imshow(abs(IMG_back), cmap='gray')
         self.canvas_reconstruct.draw()
         print("finished generating K Space")
-        
+
         return
 
     def Rx(self, theta):
@@ -373,52 +369,68 @@ class Phantom(qtw.QWidget):
         return np.matrix([[m.cos(theta), -m.sin(theta), 0],
                           [m.sin(theta), m.cos(theta), 0],
                           [0, 0, 1]])
-    
-    #function to simulate RF pulse effect on our matrix
-    def RF_Rotation(self,matrix,RF_rotation_deg):
+
+    # function to simulate RF pulse effect on our matrix
+    def RF_Rotation(self, matrix, RF_rotation_deg):
         RF_Rotated_Matrix = np.zeros(np.shape(matrix))
 
         for i in range(RF_Rotated_Matrix.shape[0]):
             for j in range(RF_Rotated_Matrix.shape[1]):
-                #apply the rotations around the X axis to all the elements of the matrix
-                RF_Rotated_Matrix[i , j] = np.dot(self.Rx(np.radians(RF_rotation_deg)),matrix[i,j])
+                # apply the rotations around the X axis to all the elements of the matrix
+                RF_Rotated_Matrix[i, j] = np.dot(self.Rx(np.radians(RF_rotation_deg)), matrix[i, j])
 
         return RF_Rotated_Matrix
-    
 
-    #function to simulate Gradient x & y effect on our matrix
-    def Gxy_Rotation(self,matrix,Gy_step_deg,Gx_step_deg):
+    # function to simulate Gradient x & y effect on our matrix
+    def Gxy_Rotation(self, matrix, Gy_step_deg, Gx_step_deg):
         Gxy_Rotated_Matrix = np.zeros(np.shape(matrix))
 
         for i in range(Gxy_Rotated_Matrix.shape[0]):
             for j in range(Gxy_Rotated_Matrix.shape[1]):
-                #compute the total rotation effec from gradients aroung Z axis 
+                # compute the total rotation effec from gradients aroung Z axis
                 Gxy_rotation_Theta = np.radians(Gy_step_deg * i + Gx_step_deg * j)
-                #apply the rotations to all the elements of the matrix
-                Gxy_Rotated_Matrix[i , j] = np.dot(self.Rz(Gxy_rotation_Theta),matrix[i,j])
+                # apply the rotations to all the elements of the matrix
+                Gxy_Rotated_Matrix[i, j] = np.dot(self.Rz(Gxy_rotation_Theta), matrix[i, j])
 
         return Gxy_Rotated_Matrix
 
-    #function to set the limits of Gradients (ex: [0,matrix row size] or [-matrix row size/2,matrix row size/2])
-    def setGradientLimits(self,matrix,Gx_zero_in_middel = 0,Gy_zero_in_middel = 0):
+    # function to set the limits of Gradients (ex: [0,matrix row size] or [-matrix row size/2,matrix row size/2])
+    def setGradientLimits(self, matrix, Gx_zero_in_middel=0, Gy_zero_in_middel=0):
         Set_Min_KX = 0
         Set_Max_KX = 0
         Set_Min_KY = 0
         Set_Max_KY = 0
-        
+
         if Gx_zero_in_middel:
-            Set_Min_KX = int(-matrix.shape[1]/2)
-            Set_Max_KX = int(matrix.shape[1]/2)
-            
+            Set_Min_KX = int(-matrix.shape[1] / 2)
+            Set_Max_KX = int(matrix.shape[1] / 2)
+
         else:
             Set_Min_KX = int(0)
             Set_Max_KX = int(matrix.shape[1])
-            
 
         if Gy_zero_in_middel:
-            Set_Min_KY = int(-matrix.shape[0]/2)
-            Set_Max_KY = int(matrix.shape[0]/2)
+            Set_Min_KY = int(-matrix.shape[0] / 2)
+            Set_Max_KY = int(matrix.shape[0] / 2)
         else:
             Set_Min_KY = int(0)
             Set_Max_KY = int(matrix.shape[0])
-        return Set_Min_KX,Set_Max_KX,Set_Min_KY,Set_Max_KY
+        return Set_Min_KX, Set_Max_KX, Set_Min_KY, Set_Max_KY
+
+    def phantom_brightness(self):
+        self.i += 1
+        print(self.i)
+        brightness = int(self.horizontalSlider_brightness.value())
+        print(int(self.horizontalSlider_brightness.value()))
+        new_brightness = cv2.addWeighted(self.img, 1, self.img, 0, brightness)
+        self.axis_Orig_Spat.imshow(new_brightness, cmap='gray')
+        self.canvas_Orig_Spat.draw()
+
+    def phantom_contrast(self):
+        contrast = int(self.horizontalSlider_contrast.value())
+        print(int(self.horizontalSlider_contrast.value()))
+        new_contrast = cv2.addWeighted(self.img, contrast/127, self.img, 0, 1)
+        self.axis_Orig_Spat.imshow(new_contrast, cmap='gray')
+        self.canvas_Orig_Spat.draw()
+
+
