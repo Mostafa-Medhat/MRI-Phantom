@@ -69,6 +69,7 @@ class Phantom(qtw.QWidget):
         self.pushButton_apply.clicked.connect(lambda: self.custom_sequence())
         self.pushButton_clear.clicked.connect(lambda: self.clear_all())
         self.pushButton_openPhantom.clicked.connect(lambda: self.phantom_read())
+        self.pushButton_startReconstruct.clicked.connect(lambda: self.start_K_Space_threading())
         self.comboBox_kspace_size.currentIndexChanged.connect(lambda: self.start_K_Space_threading())
         self.horizontalSlider_brightness.sliderReleased.connect(lambda: self.phantom_brightness())
         self.horizontalSlider_contrast.sliderReleased.connect(lambda: self.phantom_contrast())
@@ -256,8 +257,6 @@ class Phantom(qtw.QWidget):
             # Compute the magnitude spectrum of the Fourier Transform
             self.axis_Orig_Fourier.imshow(magnitude_spectrum, cmap='gray')
             self.canvas_Orig_Fourier.draw()
-
-            self.start_K_Space_threading()
 
     def start_K_Space_threading(self):
         # self.process = multiprocessing.Process(StreamThread)
