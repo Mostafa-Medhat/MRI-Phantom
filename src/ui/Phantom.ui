@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1200</width>
-    <height>760</height>
+    <width>1253</width>
+    <height>789</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -121,6 +121,9 @@
                 <bold>true</bold>
                </font>
               </property>
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
               <property name="text">
                <string> Load </string>
               </property>
@@ -169,7 +172,7 @@
             <item>
              <widget class="QLabel" name="label_2">
               <property name="text">
-               <string>Gradient</string>
+               <string>TR</string>
               </property>
              </widget>
             </item>
@@ -241,6 +244,12 @@
                 <bold>true</bold>
                </font>
               </property>
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(222, 0, 0);</string>
+              </property>
               <property name="text">
                <string>Clear All</string>
               </property>
@@ -267,40 +276,12 @@
       </layout>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="2,2,0">
+      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="2,0,2,0">
        <item>
         <layout class="QGridLayout" name="gridLayout">
          <property name="verticalSpacing">
           <number>0</number>
          </property>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_8">
-           <property name="maximumSize">
-            <size>
-             <width>16777215</width>
-             <height>30</height>
-            </size>
-           </property>
-           <property name="font">
-            <font>
-             <family>Ubuntu Mono</family>
-             <pointsize>15</pointsize>
-             <weight>75</weight>
-             <italic>true</italic>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">color:rgb(165, 29, 45)</string>
-           </property>
-           <property name="text">
-            <string>Fourier</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="1">
           <widget class="QLabel" name="label_3">
            <property name="maximumSize">
@@ -329,6 +310,34 @@
            </property>
           </widget>
          </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_8">
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Ubuntu Mono</family>
+             <pointsize>15</pointsize>
+             <weight>75</weight>
+             <italic>true</italic>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color:rgb(165, 29, 45)</string>
+           </property>
+           <property name="text">
+            <string>Fourier</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
          <item row="1" column="0">
           <widget class="QWidget" name="widget" native="true">
            <property name="minimumSize">
@@ -346,6 +355,16 @@
           <widget class="QWidget" name="widget_5" native="true"/>
          </item>
         </layout>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_pixel">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Pixel PD Value at :&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
        </item>
        <item>
         <layout class="QGridLayout" name="gridLayout_2">
@@ -415,7 +434,7 @@
          <property name="title">
           <string>Contrast Control</string>
          </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,0,0,0,0,0,0,1,1">
+         <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,1,0,0,0,0,0,0,0,0,0,1,0,1,0,2,0">
           <item>
            <spacer name="horizontalSpacer_3">
             <property name="orientation">
@@ -430,9 +449,67 @@
            </spacer>
           </item>
           <item>
-           <widget class="QRadioButton" name="radioButton">
+           <widget class="QComboBox" name="comboBox">
+            <item>
+             <property name="text">
+              <string>PD</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>T1</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>T2</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_9">
             <property name="text">
-             <string>T1</string>
+             <string>Brightness</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="horizontalSlider_brightness">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="minimum">
+             <number>-127</number>
+            </property>
+            <property name="maximum">
+             <number>127</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_11">
+            <property name="text">
+             <string>0</string>
             </property>
            </widget>
           </item>
@@ -450,9 +527,35 @@
            </spacer>
           </item>
           <item>
-           <widget class="QRadioButton" name="radioButton_2">
+           <widget class="QLabel" name="label_10">
             <property name="text">
-             <string>T2</string>
+             <string>Contrast</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="horizontalSlider_contrast">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="minimum">
+             <number>0</number>
+            </property>
+            <property name="maximum">
+             <number>10</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_12">
+            <property name="text">
+             <string>0</string>
             </property>
            </widget>
           </item>
@@ -470,14 +573,40 @@
            </spacer>
           </item>
           <item>
-           <widget class="QRadioButton" name="radioButton_3">
-            <property name="text">
-             <string>PD</string>
+           <widget class="QComboBox" name="comboBox_kspace_size">
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
             </property>
+            <property name="currentIndex">
+             <number>0</number>
+            </property>
+            <item>
+             <property name="text">
+              <string>16</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>32</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>64</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>128</string>
+             </property>
+            </item>
            </widget>
           </item>
           <item>
-           <spacer name="horizontalSpacer_4">
+           <spacer name="horizontalSpacer_12">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -497,12 +626,47 @@
               <bold>true</bold>
              </font>
             </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
             <property name="text">
              <string> Open</string>
             </property>
             <property name="icon">
              <iconset>
               <normaloff>../docs/icons/open folder.png</normaloff>../docs/icons/open folder.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_13">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_startReconstruct">
+            <property name="minimumSize">
+             <size>
+              <width>70</width>
+              <height>25</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Start</string>
             </property>
            </widget>
           </item>
@@ -529,5 +693,38 @@
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>horizontalSlider_brightness</sender>
+   <signal>sliderMoved(int)</signal>
+   <receiver>label_11</receiver>
+   <slot>setNum(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>765</x>
+     <y>759</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>779</x>
+     <y>763</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>horizontalSlider_contrast</sender>
+   <signal>sliderMoved(int)</signal>
+   <receiver>label_12</receiver>
+   <slot>setNum(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>949</x>
+     <y>759</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>963</x>
+     <y>763</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
