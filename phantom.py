@@ -421,15 +421,14 @@ class Phantom(qtw.QWidget):
         self.i += 1
         print(self.i)
         brightness = int(self.horizontalSlider_brightness.value())
-        print(int(self.horizontalSlider_brightness.value()))
         new_brightness = cv2.addWeighted(self.img, 1, self.img, 0, brightness)
         self.axis_Orig_Spat.imshow(new_brightness, cmap='gray')
         self.canvas_Orig_Spat.draw()
 
     def phantom_contrast(self):
         contrast = int(self.horizontalSlider_contrast.value())
-        print(int(self.horizontalSlider_contrast.value()))
-        new_contrast = cv2.addWeighted(self.img, contrast/127, self.img, 0, 1)
+        contrast = contrast / 5
+        new_contrast = np.clip(contrast * self.img, 0, 255).astype(np.uint8)
         self.axis_Orig_Spat.imshow(new_contrast, cmap='gray')
         self.canvas_Orig_Spat.draw()
 
