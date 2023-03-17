@@ -282,34 +282,6 @@
          <property name="verticalSpacing">
           <number>0</number>
          </property>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_8">
-           <property name="maximumSize">
-            <size>
-             <width>16777215</width>
-             <height>30</height>
-            </size>
-           </property>
-           <property name="font">
-            <font>
-             <family>Ubuntu Mono</family>
-             <pointsize>15</pointsize>
-             <weight>75</weight>
-             <italic>true</italic>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">color:rgb(165, 29, 45)</string>
-           </property>
-           <property name="text">
-            <string>Fourier</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="1">
           <widget class="QLabel" name="label_3">
            <property name="maximumSize">
@@ -338,6 +310,34 @@
            </property>
           </widget>
          </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_8">
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Ubuntu Mono</family>
+             <pointsize>15</pointsize>
+             <weight>75</weight>
+             <italic>true</italic>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color:rgb(165, 29, 45)</string>
+           </property>
+           <property name="text">
+            <string>Fourier</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
          <item row="1" column="0">
           <widget class="QWidget" name="widget" native="true">
            <property name="minimumSize">
@@ -357,9 +357,9 @@
         </layout>
        </item>
        <item>
-        <widget class="QLabel" name="label_13">
+        <widget class="QLabel" name="label_pixel">
          <property name="text">
-          <string/>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Pixel PD Value at :&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -701,12 +701,12 @@
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>771</x>
-     <y>712</y>
+     <x>765</x>
+     <y>759</y>
     </hint>
     <hint type="destinationlabel">
-     <x>806</x>
-     <y>716</y>
+     <x>779</x>
+     <y>763</y>
     </hint>
    </hints>
   </connection>
@@ -717,12 +717,12 @@
    <slot>setNum(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>932</x>
-     <y>718</y>
+     <x>949</x>
+     <y>759</y>
     </hint>
     <hint type="destinationlabel">
-     <x>964</x>
-     <y>721</y>
+     <x>963</x>
+     <y>763</y>
     </hint>
    </hints>
   </connection>
