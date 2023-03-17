@@ -431,4 +431,43 @@ class Phantom(qtw.QWidget):
         self.axis_Orig_Spat.imshow(new_contrast, cmap='gray')
         self.canvas_Orig_Spat.draw()
 
+    ######################### for the Decay Recovery effect #########################################################
+    def get_T1_value(self,image):
+        T1_Matrix = np.zeros((image.shape[0],image.shape[1]))
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                T1_Matrix[i,j] = (image[i,j]*((2000-200)/255))+200
+        return T1_Matrix
+
+    def get_T2_value(self,image):
+        T2_Matrix = np.zeros((image.shape[0],image.shape[1]))
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                T2_Matrix[i,j] = (image[i,j]*((500-40)/255))+40
+        return T2_Matrix
+
+    def get_PD_value(self,image):
+        PD_Matrix = np.zeros((image.shape[0],image.shape[1]))
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                PD_Matrix[i,j] = (image[i,j]*((120-2)/255))+2
+        return PD_Matrix
+
+
+    def vectorMagnitude(self,vector):
+        return np.sqrt(np.power(vector[0],2)+np.power(vector[1],2)+np.power(vector[2],2))
+
+    def Decay_Recovery_Matrix(self,IMG_Vectors,T1,T2,TE = 0.001,TR = 0.5):
+        recoved_Matrix = np.zeros(np.shape(IMG_Vectors))
+        for i in range(IMG_Vectors.shape[0]):
+            for j in range(IMG_Vectors.shape[1]):
+                decay_recovery = np.matrix([[np.exp(-TE/T2[i,j]),    0                   ,    0              ],
+                                    [    0              ,np.exp(-TE/T2[i,j]),    0              ],
+                                    [    0              ,    0              ,np.exp(-TR/T1[i,j])]])
+                
+                recoved_Matrix[i,j] = np.dot(decay_recovery,IMG_Vectors[i,j])+ np.array([0,0,self.vectorMagnitude(IMG_Vectors[i,j])*(1-np.exp(-TR/T1[i,j]))])
+            
+        return recoved_Matrix
+    #####################################################################################################################
+
 
