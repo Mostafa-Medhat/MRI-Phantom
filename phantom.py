@@ -60,10 +60,12 @@ class Phantom(qtw.QWidget):
                                      self.axis_sequence_custom_PG, self.axis_sequence_custom_FG,
                                      self.axis_sequence_custom_RO]
 
-        self.pushButton_openSequence.clicked.connect(lambda: self.sequence_read())
+        self.pushButton_openSequence.clicked.connect(
+            lambda: self.sequence_read())
         self.pushButton_apply.clicked.connect(lambda: self.custom_sequence())
         self.pushButton_clear.clicked.connect(lambda: self.clear_all())
-        self.pushButton_openPhantom.clicked.connect(lambda: self.phantom_read())
+        self.pushButton_openPhantom.clicked.connect(
+            lambda: self.phantom_read())
 
         # self.sequence_custom_layout()
 
@@ -93,8 +95,9 @@ class Phantom(qtw.QWidget):
 
         layout.addWidget(canvas_sequence)
 
-        axes_sequence = [axis_sequence_RF, axis_sequence_SS, axis_sequence_PG, axis_sequence_FG]
-        for axis in axes_sequence:  ## removing axes from the figure
+        axes_sequence = [axis_sequence_RF, axis_sequence_SS,
+                         axis_sequence_PG, axis_sequence_FG]
+        for axis in axes_sequence:  # removing axes from the figure
             axis.set_frame_on(False)
             axis.axes.get_xaxis().set_visible(False)
 
@@ -127,7 +130,7 @@ class Phantom(qtw.QWidget):
         #
         SS_Duration = np.linspace(0, dataFrame['SS'].Duration, 100)
         SS_step = dataFrame['RF'].Amp * \
-                  np.sinc(RF_Duration) > dataFrame['RF'].Amp / 4
+            np.sinc(RF_Duration) > dataFrame['RF'].Amp / 4
         axes[1].plot(SS_Duration, (dataFrame['SS'].Amp * SS_step),
                      color=colors[1])
         axes[1].set_ylabel("SS")
@@ -167,7 +170,8 @@ class Phantom(qtw.QWidget):
             self.df_custom['RF'].Amp = self.spinBox_RF.value()
             print(self.df_custom)
 
-            self.plotting_sequence(self.axes_sequence_custom, self.canvas_sequence_custom, self.df_custom)
+            self.plotting_sequence(
+                self.axes_sequence_custom, self.canvas_sequence_custom, self.df_custom)
 
     def clear_all(self):
         for axis, axis_custom in zip(self.axes_sequence, self.axes_sequence_custom):
@@ -183,7 +187,8 @@ class Phantom(qtw.QWidget):
         self.figure_Orig_Fourier = Figure(figsize=(20, 20), dpi=100)
         self.axis_Orig_Fourier = self.figure_Orig_Fourier.add_subplot()
         self.canvas_Orig_Fourier = FigureCanvas(self.figure_Orig_Fourier)
-        self.figure_Orig_Fourier.subplots_adjust(left=0, right=1, bottom=0, top=1)
+        self.figure_Orig_Fourier.subplots_adjust(
+            left=0, right=1, bottom=0, top=1)
         self.axis_Orig_Fourier.set_facecolor('black')
         self.gridLayout.addWidget(self.canvas_Orig_Fourier)
 
@@ -204,7 +209,8 @@ class Phantom(qtw.QWidget):
         self.figure_reconstruct = Figure(figsize=(20, 20), dpi=100)
         self.axis_reconstruct = self.figure_reconstruct.add_subplot()
         self.canvas_reconstruct = FigureCanvas(self.figure_reconstruct)
-        self.figure_reconstruct.subplots_adjust(left=0, right=1, bottom=0, top=1)
+        self.figure_reconstruct.subplots_adjust(
+            left=0, right=1, bottom=0, top=1)
         self.axis_reconstruct.set_facecolor('black')
         self.gridLayout_2.addWidget(self.canvas_reconstruct)
 
@@ -222,7 +228,8 @@ class Phantom(qtw.QWidget):
             self.img = cv2.imread(phantom_path, cv2.IMREAD_GRAYSCALE)
             w, h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(
                 self.figure_Orig_Spat.get_figheight() * self.figure_Orig_Spat.dpi)
-            self.img = cv2.resize(self.img, (w, h), interpolation=cv2.INTER_AREA)
+            self.img = cv2.resize(
+                self.img, (w, h), interpolation=cv2.INTER_AREA)
             self.axis_Orig_Spat.imshow(self.img, cmap='gray')
             self.canvas_Orig_Spat.draw()
 
@@ -242,6 +249,16 @@ class Phantom(qtw.QWidget):
             self.generate_kspace()
 
     def generate_kspace(self):
+        f = np.fft.fft2(self.img)
+
+        # Shift the zero-frequency component to the center of the spectrum
+        fshift = np.fft.fftshift(f)
+
+        magnitude_spectrum = 20 * np.log(np.abs(fshift))
+
+        # Compute the magnitude spectrum of the Fourier Transform
+        self.axis_Orig_Fourier.imshow(magnitude_spectrum, cmap='gray')
+        self.canvas_Orig_Fourier.draw()
 
         IMG = cv2.resize(self.img, (50, 50))
 
@@ -265,7 +282,8 @@ class Phantom(qtw.QWidget):
 
             # simulate Gy
             for i in range(0, IMG.shape[0]):
-                Z_Rotation = self.Rx(0) * self.Ry(0) * self.Rz((Gy_Phase / IMG.shape[0]) + ((Gy_Phase / IMG.shape[0]) * i))
+                Z_Rotation = self.Rx(
+                    0) * self.Ry(0) * self.Rz((Gy_Phase / IMG.shape[0]) + ((Gy_Phase / IMG.shape[0]) * i))
                 for j in range(0, IMG.shape[1]):
                     IMG_vector[i][j] = IMG_vector[i][j] * Z_Rotation
 
@@ -274,13 +292,14 @@ class Phantom(qtw.QWidget):
                 # stepi = 2*np.pi/(IMG.shape[0])*(Krow)
                 Gx_phase = 2 * np.pi / (IMG.shape[0]) * (Kcol)
                 for i in range(0, IMG.shape[1]):
-                    Z_Rotation = self.Rx(0) * self.Ry(0) * self.Rz((((2 * np.pi) / IMG.shape[0]) * i))
+                    Z_Rotation = self.Rx(
+                        0) * self.Ry(0) * self.Rz((((2 * np.pi) / IMG.shape[0]) * i))
                     for j in range(0, IMG.shape[0]):
                         # theta=Gy_Phase*i + stepj*j
                         IMG_vector[j][i] = IMG_vector[j][i] * Z_Rotation
                         IMG_K_Space[Krow][Kcol] += (
-                                np.sqrt(np.square(IMG_vector[i][j][0]) + np.square(IMG_vector[i][j][1])) * np.exp(
-                            complex(0, -(Gy_Phase * i + Gx_phase * j))))
+                            np.sqrt(np.square(IMG_vector[i][j][0]) + np.square(IMG_vector[i][j][1])) * np.exp(
+                                complex(0, -(Gy_Phase * i + Gx_phase * j))))
 
         IMG_K_Space_shift = np.fft.fftshift(IMG_K_Space)
 
