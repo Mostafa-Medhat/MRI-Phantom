@@ -266,7 +266,7 @@ class Phantom(qtw.QWidget):
         img_combined[:, :, 0] = self.img
         pixel_values = img_combined[y, x]
         value = (pixel_values[0] * ((120 - 2) / 255)) + 2
-        self.label_pixel.setText(f'Pixel PD value at ({x}, {y}): {round(value,4)}')
+        self.label_pixel.setText(f'Pixel PD value at ({x}, {y}): {round(value, 4)}')
 
     def start_K_Space_threading(self):
         # self.process = multiprocessing.Process(StreamThread)
@@ -442,42 +442,40 @@ class Phantom(qtw.QWidget):
         self.canvas_Orig_Spat.draw()
 
     ######################### for the Decay Recovery effect #########################################################
-    def get_T1_value(self,image):
-        T1_Matrix = np.zeros((image.shape[0],image.shape[1]))
+    def get_T1_value(self, image):
+        T1_Matrix = np.zeros((image.shape[0], image.shape[1]))
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
-                T1_Matrix[i,j] = (image[i,j]*((2000-200)/255))+200
+                T1_Matrix[i, j] = (image[i, j] * ((2000 - 200) / 255)) + 200
         return T1_Matrix
 
-    def get_T2_value(self,image):
-        T2_Matrix = np.zeros((image.shape[0],image.shape[1]))
+    def get_T2_value(self, image):
+        T2_Matrix = np.zeros((image.shape[0], image.shape[1]))
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
-                T2_Matrix[i,j] = (image[i,j]*((500-40)/255))+40
+                T2_Matrix[i, j] = (image[i, j] * ((500 - 40) / 255)) + 40
         return T2_Matrix
 
-    def get_PD_value(self,image):
-        PD_Matrix = np.zeros((image.shape[0],image.shape[1]))
+    def get_PD_value(self, image):
+        PD_Matrix = np.zeros((image.shape[0], image.shape[1]))
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
-                PD_Matrix[i,j] = (image[i,j]*((120-2)/255))+2
+                PD_Matrix[i, j] = (image[i, j] * ((120 - 2) / 255)) + 2
         return PD_Matrix
 
+    def vectorMagnitude(self, vector):
+        return np.sqrt(np.power(vector[0], 2) + np.power(vector[1], 2) + np.power(vector[2], 2))
 
-    def vectorMagnitude(self,vector):
-        return np.sqrt(np.power(vector[0],2)+np.power(vector[1],2)+np.power(vector[2],2))
-
-    def Decay_Recovery_Matrix(self,IMG_Vectors,T1,T2,TE = 0.001,TR = 0.5):
+    def Decay_Recovery_Matrix(self, IMG_Vectors, T1, T2, TE=0.001, TR=0.5):
         recoved_Matrix = np.zeros(np.shape(IMG_Vectors))
         for i in range(IMG_Vectors.shape[0]):
             for j in range(IMG_Vectors.shape[1]):
-                decay_recovery = np.matrix([[np.exp(-TE/T2[i,j]),    0                   ,    0              ],
-                                    [    0              ,np.exp(-TE/T2[i,j]),    0              ],
-                                    [    0              ,    0              ,np.exp(-TR/T1[i,j])]])
-                
-                recoved_Matrix[i,j] = np.dot(decay_recovery,IMG_Vectors[i,j])+ np.array([0,0,self.vectorMagnitude(IMG_Vectors[i,j])*(1-np.exp(-TR/T1[i,j]))])
-            
+                decay_recovery = np.matrix([[np.exp(-TE / T2[i, j]), 0, 0],
+                                            [0, np.exp(-TE / T2[i, j]), 0],
+                                            [0, 0, np.exp(-TR / T1[i, j])]])
+
+                recoved_Matrix[i, j] = np.dot(decay_recovery, IMG_Vectors[i, j]) + np.array(
+                    [0, 0, self.vectorMagnitude(IMG_Vectors[i, j]) * (1 - np.exp(-TR / T1[i, j]))])
+
         return recoved_Matrix
     #####################################################################################################################
-
-
