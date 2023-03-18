@@ -283,6 +283,7 @@ class Phantom(qtw.QWidget):
         # print("reintering kspace function")
 
         self.axis_kspace.clear()
+        self.axis_kspace.set_yticks([])
         self.canvas_kspace.draw()
 
         IMG = cv2.resize(self.img,
