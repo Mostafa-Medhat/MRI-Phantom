@@ -13,7 +13,7 @@ import numpy as np
 import qdarkstyle
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import QSize
-from PyQt5.QtWidgets import QFileDialog, QSizePolicy
+from PyQt5.QtWidgets import QFileDialog, QSizePolicy, QLabel
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import multiprocessing
@@ -40,7 +40,6 @@ class Phantom(qtw.QWidget):
         super().__init__()
 
         uic.loadUi("src/ui/Phantom.ui", self)
-        # self.splitter.setWidth(50, 1)
 
         self.i = 0
         self.df = None
@@ -73,8 +72,7 @@ class Phantom(qtw.QWidget):
         self.comboBox_kspace_size.currentIndexChanged.connect(lambda: self.start_K_Space_threading())
         self.horizontalSlider_brightness.sliderReleased.connect(lambda: self.phantom_brightness())
         self.horizontalSlider_contrast.sliderReleased.connect(lambda: self.phantom_contrast())
-
-        # self.sequence_custom_layout()
+        self.canvas_Orig_Spat.mpl_connect('button_press_event', self.getPixel)
 
     def sequence_layout(self, figure, layout):
         ######################## Sequence Layout #########################
@@ -257,6 +255,18 @@ class Phantom(qtw.QWidget):
             # Compute the magnitude spectrum of the Fourier Transform
             self.axis_Orig_Fourier.imshow(magnitude_spectrum, cmap='gray')
             self.canvas_Orig_Fourier.draw()
+
+    def getPixel(self, event):
+        # Get the position of the mouse click
+        x = int(round(event.xdata))
+        y = int(round(event.ydata))
+
+        # Get the pixel value at the clicked position
+        img_combined = np.zeros((self.img.shape[0], self.img.shape[1], 1), dtype=np.uint8)
+        img_combined[:, :, 0] = self.img
+        pixel_values = img_combined[y, x]
+        value = (pixel_values[0] * ((120 - 2) / 255)) + 2
+        self.label_pixel.setText(f'Pixel PD value at ({x}, {y}): {round(value,4)}')
 
     def start_K_Space_threading(self):
         # self.process = multiprocessing.Process(StreamThread)
