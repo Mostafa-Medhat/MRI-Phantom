@@ -232,11 +232,6 @@ class Phantom(qtw.QWidget):
                                                                                                         "*.jpg *.jpeg "
                                                                                                         "*.png)")[0]
         if phantom_path != "":
-            # print("running kspace",self.Running_K_Space)
-            # if self.Running_K_Space == 1:
-            #     self.Reload_K_Space = 1
-            # else:
-            #     self.Reload_K_Space = 0
             self.img = cv2.imread(phantom_path, cv2.IMREAD_GRAYSCALE)
             w, h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(
                 self.figure_Orig_Spat.get_figheight() * self.figure_Orig_Spat.dpi)
@@ -338,11 +333,19 @@ class Phantom(qtw.QWidget):
                 IMG_K_Space[-Ky, -Kx] = valueToAdd
 
             # updates the K_space image for every row added to it with the addition of applying fftshift to it
-            self.axis_kspace.imshow(20 * np.log(abs(np.fft.fftshift(IMG_K_Space))), cmap='gray')
+            w, h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(
+                self.figure_Orig_Spat.get_figheight() * self.figure_Orig_Spat.dpi)
+
+            k_space_magnitude_spectrum = 20 * np.log(abs(np.fft.fftshift(IMG_K_Space)))
+            k_space_magnitude_spectrum = cv2.resize(k_space_magnitude_spectrum, (w, h), interpolation=cv2.INTER_AREA)
+            self.axis_kspace.imshow(k_space_magnitude_spectrum, cmap='gray')
+            self.axis_kspace.set_yticks([])
             self.canvas_kspace.draw()
             # update the reconstructed image for every row added to the K_Space
             IMG_back = np.fft.ifft2(np.fft.ifftshift(IMG_K_Space))
-            self.axis_reconstruct.imshow(abs(IMG_back), cmap='gray')
+            abs_img_back = abs(IMG_back)
+            abs_img_back = cv2.resize(abs_img_back, (w, h), interpolation=cv2.INTER_AREA)
+            self.axis_reconstruct.imshow(abs_img_back, cmap='gray')
             self.canvas_reconstruct.draw()
             # print the progress of our K_Space
             print(Ky - Min_KY + 1)
@@ -350,16 +353,17 @@ class Phantom(qtw.QWidget):
         self.Running_K_Space = 0
         self.Reload_K_Space = 0
 
-        IMG_K_Space_shift = np.fft.fftshift(IMG_K_Space)
+        ####################################### Old Draw #########################################
+        # IMG_K_Space_shift = np.fft.fftshift(IMG_K_Space)
         # Rescale the output of the K_Space
-        k_space_magnitude_spectrum = 20 * np.log(np.abs(IMG_K_Space_shift))
+        # k_space_magnitude_spectrum = 20 * np.log(np.abs(IMG_K_Space_shift))
         # reconstruct our image back from the generated k_Space
-        IMG_back = np.fft.ifft2(np.fft.ifftshift(IMG_K_Space_shift))
+        # IMG_back = np.fft.ifft2(np.fft.ifftshift(IMG_K_Space_shift))
 
-        self.axis_kspace.imshow(k_space_magnitude_spectrum, cmap='gray')
-        self.canvas_kspace.draw()
-        self.axis_reconstruct.imshow(abs(IMG_back), cmap='gray')
-        self.canvas_reconstruct.draw()
+        # self.axis_kspace.imshow(k_space_magnitude_spectrum, cmap='gray')
+        # self.canvas_kspace.draw()
+        # self.axis_reconstruct.imshow(IMG_back, cmap='gray')
+        # self.canvas_reconstruct.draw()
         print("finished generating K Space")
 
         return
