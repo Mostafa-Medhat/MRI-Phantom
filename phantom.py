@@ -70,7 +70,7 @@ class Phantom(qtw.QWidget):
         self.pushButton_clear.clicked.connect(lambda: self.clear_all())
         self.pushButton_openPhantom.clicked.connect(lambda: self.phantom_read())
         self.pushButton_startReconstruct.clicked.connect(lambda: self.start_K_Space_threading())
-        self.comboBox_kspace_size.currentIndexChanged.connect(lambda: self.start_K_Space_threading())
+        # self.comboBox_kspace_size.currentIndexChanged.connect(lambda: self.start_K_Space_threading())
         self.horizontalSlider_brightness.sliderReleased.connect(lambda: self.phantom_brightness())
         self.horizontalSlider_contrast.sliderReleased.connect(lambda: self.phantom_contrast())
 
