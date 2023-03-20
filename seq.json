@@ -2,30 +2,30 @@
     "RF" : {
         "Amp" : 5,
         "Pos" : 0,
-        "Duration" : 4
+        "Duration" : 1
         },
     "SS" : {
         "Amp" : 3,
         "Pos" : 0,
-        "Duration" : 4
+        "Duration" : 1
         },
     "PG" : {
         "Amp" : 3,
-        "Pos" : 4,
-        "Duration" : 4
+        "Pos" : 1,
+        "Duration" : 1
         },
     "FG" : {
         "Amp" : 6,
-        "Pos" : 8,
-        "Duration" : 4
+        "Pos" : 2,
+        "Duration" : 16
         },
     "RO" : {
         "Amp" : 6,
-        "Pos" : 8,
-        "Duration" : 4
+        "Pos" : 2,
+        "Duration" : 16
         },
     "TR": {
-        "Pos": 14
+        "Pos": 20
     },
     "TE": {
         "Pos": 10
