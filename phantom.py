@@ -666,3 +666,86 @@ class Phantom(qtw.QWidget):
         
         self.Running_K_Space = 0
         self.Reload_K_Space = 0
+
+
+    ########################## get T1, T2, PD images###########################################
+    ########these functions take normal phantom image and return T1, T2, PD images
+
+    def rescaleT1(self,t1Value):
+        scaledT1 = ((t1Value - 200)/(2000-200))*255 # t1Value = (scaledT1*((2000-200)/255))+200
+        return scaledT1
+        # return (scaledT1*((2000-200)/255))+200
+    # def rescaleT12(t12Value):
+    #     scaledT12 = 255-t12Value
+    #     return scaledT12
+
+    def rescaleT2(self,t2Value):
+        scaledT2 = ((t2Value - 40)/(500-40))*255 # t2Value = (scaledT2*((500-40)/255))+40
+        return scaledT2
+
+    def rescalePD(self,PDValue):
+        scaledPD = ((PDValue - 2)/(120-2))*255 # PDValue = (scaledPD*((120-2)/255))+2
+        return scaledPD
+
+    def t1(self,image):
+        t1_image = np.zeros((image.shape[0],image.shape[1]),dtype=np.uint8)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                if image[i][j] >= 220:
+                    t1_image[i][j] = int(self.rescaleT1(324)) # scalp
+                elif 120 > image[i][j] >= 95:
+                    t1_image[i][j] = int(self.rescaleT1(533)) # white Mater
+                elif 95 > image[i][j] >= 70:
+                    t1_image[i][j] = int(self.rescaleT1(583)) # white Mater
+                elif 70 > image[i][j] >= 50:
+                    t1_image[i][j] = int(self.rescaleT1(857)) # Gray Mater
+                elif 50 > image[i][j] >= 26:
+                    t1_image[i][j] = int(self.rescaleT1(926)) # Gray Mater
+                else:
+                    t1_image[i][j] = int(self.rescaleT1(2000)) # CSF
+        return t1_image
+
+    # def t1Method2(image2):
+    #     t1_image2 = np.zeros((image2.shape[0],image2.shape[1]),dtype=np.uint8)
+    #     for i in range(image2.shape[0]):
+    #         for j in range(image2.shape[1]):
+    #             t1_image2[i][j] = int(rescaleT12(image2[i][j]))
+    #     return t1_image2
+
+        ##most values are 77, 52, 26, 103, 
+
+    def t2(self,image):
+        t2_image = np.zeros((image.shape[0],image.shape[1]),dtype=np.uint8)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                if image[i][j] >= 220:
+                    t2_image[i][j] = int(self.rescaleT2(70)) # scalp
+                elif 120 > image[i][j] >= 95:
+                    t2_image[i][j] = int(self.rescaleT2(50)) # white Mater
+                elif 95 > image[i][j] >= 70:
+                    t2_image[i][j] = int(self.rescaleT2(80)) # white Mater
+                elif 70 > image[i][j] >= 50:
+                    t2_image[i][j] = int(self.rescaleT2(100)) # Gray Mater
+                elif 50 > image[i][j] >= 26:
+                    t2_image[i][j] = int(self.rescaleT2(120)) # Gray Mater
+                else:
+                    t2_image[i][j] = int(self.rescaleT2(500)) # CSF
+        return t2_image
+
+    def PD(self,image):
+        PD_image = np.zeros((image.shape[0],image.shape[1]),dtype=np.uint8)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                if image[i][j] >= 220:
+                    PD_image[i][j] = int(self.rescalePD(80)) # scalp
+                elif 120 > image[i][j] >= 95:
+                    PD_image[i][j] = int(self.rescalePD(55)) # white Mater
+                elif 95 > image[i][j] >= 70:
+                    PD_image[i][j] = int(self.rescalePD(61.7)) # white Mater
+                elif 70 > image[i][j] >= 50:
+                    PD_image[i][j] = int(self.rescalePD(74.5)) # Gray Mater
+                elif 50 > image[i][j] >= 26:
+                    PD_image[i][j] = int(self.rescalePD(95)) # Gray Mater
+                else:
+                    PD_image[i][j] = int(self.rescalePD(98)) # CSF
+        return PD_image
