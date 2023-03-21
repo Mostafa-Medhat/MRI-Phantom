@@ -47,6 +47,8 @@ class Phantom(qtw.QWidget):
         self.Running_K_Space = 0
         self.Reload_K_Space = 0
 
+        self.Gmiddle = 1
+
         self.figure_sequence = Figure(dpi=80)
         self.figure_sequence_custom = Figure(dpi=80)
 
@@ -69,7 +71,7 @@ class Phantom(qtw.QWidget):
         self.pushButton_clear.clicked.connect(lambda: self.clear_all())
         self.pushButton_openPhantom.clicked.connect(lambda: self.phantom_read())
         self.pushButton_startReconstruct.clicked.connect(lambda: self.start_K_Space_threading())
-        self.comboBox_kspace_size.currentIndexChanged.connect(lambda: self.start_K_Space_threading())
+        # self.comboBox_kspace_size.currentIndexChanged.connect(lambda: self.start_K_Space_threading())
         self.horizontalSlider_brightness.sliderReleased.connect(lambda: self.phantom_brightness())
         self.horizontalSlider_contrast.sliderReleased.connect(lambda: self.phantom_contrast())
         self.canvas_Orig_Spat.mpl_connect('button_press_event', self.getPixel)
@@ -426,9 +428,11 @@ class Phantom(qtw.QWidget):
         if Gy_zero_in_middel:
             Set_Min_KY = int(-matrix.shape[0] / 2)
             Set_Max_KY = int(matrix.shape[0] / 2)
+            self.Gmiddle = 1
         else:
             Set_Min_KY = int(0)
             Set_Max_KY = int(matrix.shape[0])
+            self.Gmiddle = 0
         return Set_Min_KX, Set_Max_KX, Set_Min_KY, Set_Max_KY
 
     def phantom_brightness(self):
@@ -471,21 +475,21 @@ class Phantom(qtw.QWidget):
     def vectorMagnitude(self, vector):
         return np.sqrt(np.power(vector[0], 2) + np.power(vector[1], 2) + np.power(vector[2], 2))
 
-    def Decay_Recovery_Matrix(self, IMG_Vectors, T1, T2, TE=0.001, TR=0.5):
+    def Decay_Recovery_Matrix(self, IMG_Vectors, T1, T2, t):
         recoved_Matrix = np.zeros(np.shape(IMG_Vectors))
         for i in range(IMG_Vectors.shape[0]):
             for j in range(IMG_Vectors.shape[1]):
-                decay_recovery = np.matrix([[np.exp(-TE / T2[i, j]), 0, 0],
-                                            [0, np.exp(-TE / T2[i, j]), 0],
-                                            [0, 0, np.exp(-TR / T1[i, j])]])
+                decay_recovery = np.matrix([[np.exp(-t / T2[i, j]), 0, 0],
+                                            [0, np.exp(-t / T2[i, j]), 0],
+                                            [0, 0, np.exp(-t / T1[i, j])]])
 
                 recoved_Matrix[i, j] = np.dot(decay_recovery, IMG_Vectors[i, j]) + np.array(
-                    [0, 0, self.vectorMagnitude(IMG_Vectors[i, j]) * (1 - np.exp(-TR / T1[i, j]))])
+                    [0, 0, self.vectorMagnitude(IMG_Vectors[i, j]) * (1 - np.exp(-t / T1[i, j]))])
 
         return recoved_Matrix
     #####################################################################################################################
 
-    ################################### functions to read current sequence and apply it ##################################
+    ############## functions to read current sequence and apply it with decay recovery ##################################
     def Gx_Rotation(self,matrix,Gx_step_deg):
         Gx_Rotated_Matrix = np.zeros(np.shape(matrix))
 
@@ -506,23 +510,68 @@ class Phantom(qtw.QWidget):
 
         return Gy_Rotated_Matrix
     
+
+    def RF(self,matrix,amp):
+        TRF_rotatedMatrix = self.RF_Rotation(matrix, amp)
+        return TRF_rotatedMatrix
+
+    def Gy(self,matrix,amp,duration):
+        min = 0
+        max = duration
+        if self.Gmiddle and duration > 1:
+            min = int(-duration/2)
+            max = int(duration/2)
+        
+        for deltaT in range(min,max):
+            # Gy_step = int((amp / (max-min)) * (deltaT+1))
+            Gy_rotated_Matrix = self.Gy_Rotation(matrix,amp)
+        # self.Gy_Ky += 1
+        return Gy_rotated_Matrix
+            
+    def Gx(self,matrix,amp,duration,readout = 0):
+        returned_K_Space_array = np.zeros(matrix.shape[1],dtype=np.complex_)
+
+        min = 0
+        max = duration
+        if self.Gmiddle and duration > 1:
+            min = int(-duration/2)
+            max = int(duration/2)
+
+        for deltaT in range(min,max):
+            Gx_step = (amp / (max-min)) * deltaT
+            Gx_rotated_Matrix = self.Gx_Rotation(matrix,Gx_step)
+            if readout:
+                returned_K_Space_array[-deltaT] = self.readOut(Gx_rotated_Matrix)
+        if readout:
+            return Gx_rotated_Matrix, returned_K_Space_array
+        else:
+            return Gx_rotated_Matrix
+
+    def readOut(self,matrix):
+        
+        sigmaX = np.sum(matrix[:, :, 0])
+        sigmaY = np.sum(matrix[:, :, 1])
+        valueToAdd = complex(sigmaX, sigmaY)
+        return valueToAdd
+    
     def generate_sequence(self,dataFram):
         shift = 0
         Translated_Sequence = np.zeros([1000])
         for i in range(int(self.comboBox_kspace_size.currentText())): #int(dataFram['PG'].NumOfRep) 
             rfpos = dataFram['RF'].Pos
             rfduration = dataFram['RF'].Duration
-            Translated_Sequence[(shift+rfpos):(shift+rfpos+rfduration)] = 1
+            Translated_Sequence[(shift+rfpos)] = 1
             gypos = dataFram['PG'].Pos
             gyduration = dataFram['PG'].Duration
-            Translated_Sequence[(shift+gypos):(shift+gypos+gyduration)] = 2
+            Translated_Sequence[(shift+gypos)] = 2
             gxpos = dataFram['FG'].Pos
             # gxduration = int(self.comboBox_kspace_size.currentText())
             gxduration = dataFram['FG'].Duration
-            Translated_Sequence[(shift+gxpos):(shift+gxpos+gxduration)] = 3
-            shift += rfpos+rfduration+gypos+gyduration+gxpos+gxduration
-        print(Translated_Sequence)
+            Translated_Sequence[(shift+gxpos)] = 3
+            shift += rfpos+gypos+gxpos  #rfpos+rfduration+gypos+gyduration+gxpos+gxduration
+        # print(Translated_Sequence)
         return Translated_Sequence
+    
     
     def Run_Sequence(self):
 
@@ -539,87 +588,81 @@ class Phantom(qtw.QWidget):
 
         self.axis_kspace.imshow(abs((IMG_K_Space)), cmap='gray')
 
+        seq = self.generate_sequence(self.df)
+
         Min_KX, Max_KX, Min_KY, Max_KY = self.setGradientLimits(IMG, Gx_zero_in_middel=1, Gy_zero_in_middel=1)
 
         IMG_vector[:,:,2] = IMG[:,:]
 
-        seq = self.generate_sequence(self.df)
+        # seq = self.generate_sequence(self.df)
         
         Gy_counter = Min_KY
 
         Gx_counter = Min_KX
 
-        TRF_rotatedMatrix = np.zeros((IMG_vector.shape[0],IMG_vector.shape[1],3),dtype=np.float32)
+        T1 = self.get_T1_value(IMG)
+        T2 = self.get_T2_value(IMG)
+        TR = 500
+        TE = 10
 
-        Gy_rotated_Matrix = np.zeros((IMG_vector.shape[0],IMG_vector.shape[1],3),dtype=np.float32)
+        rotMatrix = np.zeros(np.shape(IMG_vector))
+        rotMatrix = IMG_vector
 
-        Gx_rotated_Matrix = np.zeros((IMG_vector.shape[0],IMG_vector.shape[1],3),dtype=np.float32)
-        # i = 0
-        for k in range(seq.shape[0]):
+        # min = 0
+        # max = IMG_vector.shape[0]
+        # if self.Gmiddle and IMG_vector.shape[0] > 1:
+        #     min = int(-IMG_vector.shape[0]/2)
+        #     max = int(IMG_vector.shape[0]/2)
+
+        for i in range(seq.shape[0]):
             self.Running_K_Space = 1
+
             # check if k_Space relaod is needed
             if self.Reload_K_Space == 1:
                 self.Reload_K_Space = 0
                 self.Running_K_Space = 0
                 return
+            
 
-            if seq[k] == 1: #RF
-                TRF_rotatedMatrix = self.RF_Rotation(IMG_vector, 90)
-                Gy_rotated_Matrix = TRF_rotatedMatrix
+            #RF
+            if seq[i] == 1:
+                if i == 0:
+                    rotMatrix = IMG_vector
+                else:
+                    rotMatrix = self.Decay_Recovery_Matrix(rotMatrix,T1,T2,(TR-TE))
+                rotMatrix = self.RF(rotMatrix,int(self.df['RF'].Amp))
 
-
-            if seq[k] == 2: #Gy
-                Gy_step = (360 / (Max_KY - Min_KY)) * Gy_counter
-                Gy_rotated_Matrix = self.Gy_Rotation(TRF_rotatedMatrix,Gy_step)
-                Gx_rotated_Matrix = Gy_rotated_Matrix
+            #Gy
+            if seq[i] == 2:
+                rotMatrix = self.Gy(rotMatrix,amp= (360/IMG_vector.shape[0])*Gy_counter,duration= int(self.df['PG'].Duration))
                 if Gy_counter == (Max_KY):
                     Gy_counter = Min_KY
                 else:
                     Gy_counter += 1
-                
-                Gx_counter = Min_KX
-                # print("Gy")
-                
-            
-            if seq[k] == 3: #Gx and readout
-            
-                Gx_step = (360 / (Max_KX - Min_KX)) * Gx_counter
-                Gx_rotated_Matrix = self.Gx_Rotation(Gy_rotated_Matrix,Gx_step)
-                TRF_rotatedMatrix = Gx_rotated_Matrix
-                # print("Gx")
-                
-                sigmaX = np.sum(Gx_rotated_Matrix[:, :, 0])
-                sigmaY = np.sum(Gx_rotated_Matrix[:, :, 1])
-                valueToAdd = complex(sigmaX, sigmaY)
-                IMG_K_Space[-Gy_counter, -Gx_counter] = valueToAdd
-                Gx_counter += 1
-                if Gx_counter == (Max_KX):
-                    Gx_counter = Min_KX
-                    IMG_vector[:,:,2] = IMG[:,:]
 
-                    # updates the K_space image for every row added to it with the addition of applying fftshift to it
-                    w, h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(
-                        self.figure_Orig_Spat.get_figheight() * self.figure_Orig_Spat.dpi)
+            #Gx
+            if seq[i] == 3:
+                # rotMatrix = self.Gx(rotMatrix,-180,int(IMG_vector.shape[1]/2),0)
+                rotMatrix = self.Decay_Recovery_Matrix(rotMatrix,T1,T2,TE)
+                rotMatrix,IMG_K_Space[-Gy_counter,:] = self.Gx(rotMatrix,amp= int(self.df['FG'].Amp),duration= int(self.df['FG'].Duration),readout=1)
+                # print(IMG_K_Space)
+                # updates the K_space image for every row added to it with the addition of applying fftshift to it
+                w, h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(
+                    self.figure_Orig_Spat.get_figheight() * self.figure_Orig_Spat.dpi)
 
-                    k_space_magnitude_spectrum = 20 * np.log(abs(np.fft.fftshift(IMG_K_Space)))
-                    k_space_magnitude_spectrum = cv2.resize(k_space_magnitude_spectrum, (w, h), interpolation=cv2.INTER_AREA)
-                    self.axis_kspace.imshow(k_space_magnitude_spectrum, cmap='gray')
-                    self.axis_kspace.set_yticks([])
-                    self.canvas_kspace.draw()
-                    # update the reconstructed image for every row added to the K_Space
-                    IMG_back = np.fft.ifft2(np.fft.ifftshift(IMG_K_Space))
-                    abs_img_back = abs(IMG_back)
-                    abs_img_back = cv2.resize(abs_img_back, (w, h), interpolation=cv2.INTER_AREA)
-                    self.axis_reconstruct.imshow(abs_img_back, cmap='gray')
-                    self.canvas_reconstruct.draw()
-                    # print the progress of our K_Space
-                    print(Gy_counter - Min_KY)
-                
-                
-            # rotated_Matrix = matrix
-            
-            # i += 1
+                k_space_magnitude_spectrum = 20 * np.log(abs(np.fft.fftshift(IMG_K_Space)))
+                k_space_magnitude_spectrum = cv2.resize(k_space_magnitude_spectrum, (w, h), interpolation=cv2.INTER_AREA)
+                self.axis_kspace.imshow(k_space_magnitude_spectrum, cmap='gray')
+                self.axis_kspace.set_yticks([])
+                self.canvas_kspace.draw()
+                # update the reconstructed image for every row added to the K_Space
+                IMG_back = np.fft.ifft2(np.fft.ifftshift(IMG_K_Space))
+                abs_img_back = abs(IMG_back)
+                abs_img_back = cv2.resize(abs_img_back, (w, h), interpolation=cv2.INTER_AREA)
+                self.axis_reconstruct.imshow(abs_img_back, cmap='gray')
+                self.canvas_reconstruct.draw()
+                # rotMatrix = self.Decay_Recovery_Matrix(rotMatrix,T1,T2,(TR-TE))
+                print(Gy_counter)
+        
         self.Running_K_Space = 0
         self.Reload_K_Space = 0
-            
-        # return returned_K_Space_Matrix
