@@ -1,6 +1,6 @@
 {
     "RF" : {
-        "Amp" : 5,
+        "Amp" : 10,
         "Pos" : 0,
         "Duration" : 1
         },
@@ -15,9 +15,9 @@
         "Duration" : 1
         },
     "FG" : {
-        "Amp" : 6,
+        "Amp" : 360,
         "Pos" : 2,
-        "Duration" : 16
+        "Duration" : 32
         },
     "RO" : {
         "Amp" : 6,
