@@ -261,9 +261,10 @@ class Phantom(qtw.QWidget):
             self.axis_Orig_Fourier.imshow(magnitude_spectrum, cmap='gray')
             self.canvas_Orig_Fourier.draw()
             self.generate_contrast()
-            self.get_combined_values()
+            # self.get_combined_values()
 
     def generate_contrast(self):
+        self.combined_matrix = np.zeros((self.img.shape[0], self.img.shape[1], 3))
         self.img_t1 = self.t1(self.img)
         self.img_t2 = self.t2(self.img)
         self.img_pd = self.pd(self.img)
@@ -479,32 +480,32 @@ class Phantom(qtw.QWidget):
         self.canvas_Orig_Spat.draw()
 
     ######################### for the Decay Recovery effect #########################################################
-    def get_T1_value(self, image):
-        T1_Matrix = np.zeros((image.shape[0], image.shape[1]))
-        for i in range(image.shape[0]):
-            for j in range(image.shape[1]):
-                T1_Matrix[i, j] = (image[i, j] * ((2000 - 200) / 255)) + 200
-        return T1_Matrix
+    # def get_T1_value(self, image):
+    #     T1_Matrix = np.zeros((image.shape[0], image.shape[1]))
+    #     for i in range(image.shape[0]):
+    #         for j in range(image.shape[1]):
+    #             T1_Matrix[i, j] = (image[i, j] * ((2000 - 200) / 255)) + 200
+    #     return T1_Matrix
 
-    def get_T2_value(self, image):
-        T2_Matrix = np.zeros((image.shape[0], image.shape[1]))
-        for i in range(image.shape[0]):
-            for j in range(image.shape[1]):
-                T2_Matrix[i, j] = (image[i, j] * ((500 - 40) / 255)) + 40
-        return T2_Matrix
+    # def get_T2_value(self, image):
+    #     T2_Matrix = np.zeros((image.shape[0], image.shape[1]))
+    #     for i in range(image.shape[0]):
+    #         for j in range(image.shape[1]):
+    #             T2_Matrix[i, j] = (image[i, j] * ((500 - 40) / 255)) + 40
+    #     return T2_Matrix
 
-    def get_PD_value(self, image):
-        PD_Matrix = np.zeros((image.shape[0], image.shape[1]))
-        for i in range(image.shape[0]):
-            for j in range(image.shape[1]):
-                PD_Matrix[i, j] = (image[i, j] * ((120 - 2) / 255)) + 2
-        return PD_Matrix
+    # def get_PD_value(self, image):
+    #     PD_Matrix = np.zeros((image.shape[0], image.shape[1]))
+    #     for i in range(image.shape[0]):
+    #         for j in range(image.shape[1]):
+    #             PD_Matrix[i, j] = (image[i, j] * ((120 - 2) / 255)) + 2
+    #     return PD_Matrix
 
-    def get_combined_values(self):
-        self.combined_matrix = np.zeros((self.img.shape[0], self.img.shape[1], 3))
-        self.combined_matrix[:, :, 0] = self.get_PD_value(self.img)
-        self.combined_matrix[:, :, 1] = self.get_T1_value(self.img)
-        self.combined_matrix[:, :, 2] = self.get_T2_value(self.img)
+    # def get_combined_values(self):
+    #     self.combined_matrix = np.zeros((self.img.shape[0], self.img.shape[1], 3))
+    #     self.combined_matrix[:, :, 0] = self.get_PD_value(self.img)
+    #     self.combined_matrix[:, :, 1] = self.get_T1_value(self.img)
+    #     self.combined_matrix[:, :, 2] = self.get_T2_value(self.img)
 
     def vectorMagnitude(self, vector):
         return np.sqrt(np.power(vector[0], 2) + np.power(vector[1], 2) + np.power(vector[2], 2))
@@ -727,16 +728,22 @@ class Phantom(qtw.QWidget):
             for j in range(image.shape[1]):
                 if image[i][j] >= 220:
                     t1_image[i][j] = int(self.rescaleT1(324))  # scalp
+                    self.combined_matrix[i,j,1] = 324
                 elif 120 > image[i][j] >= 95:
                     t1_image[i][j] = int(self.rescaleT1(533))  # white Mater
+                    self.combined_matrix[i,j,1] = 533
                 elif 95 > image[i][j] >= 70:
                     t1_image[i][j] = int(self.rescaleT1(583))  # white Mater
+                    self.combined_matrix[i,j,1] = 583
                 elif 70 > image[i][j] >= 50:
                     t1_image[i][j] = int(self.rescaleT1(857))  # Gray Mater
+                    self.combined_matrix[i,j,1] = 857
                 elif 50 > image[i][j] >= 26:
                     t1_image[i][j] = int(self.rescaleT1(926))  # Gray Mater
+                    self.combined_matrix[i,j,1] = 926
                 else:
                     t1_image[i][j] = int(self.rescaleT1(2000))  # CSF
+                    self.combined_matrix[i,j,1] = 2000
         return t1_image
 
     def t2(self, image):
@@ -745,16 +752,22 @@ class Phantom(qtw.QWidget):
             for j in range(image.shape[1]):
                 if image[i][j] >= 220:
                     t2_image[i][j] = int(self.rescaleT2(70))  # scalp
+                    self.combined_matrix[i,j,2] = 70
                 elif 120 > image[i][j] >= 95:
                     t2_image[i][j] = int(self.rescaleT2(50))  # white Mater
+                    self.combined_matrix[i,j,2] = 50
                 elif 95 > image[i][j] >= 70:
                     t2_image[i][j] = int(self.rescaleT2(80))  # white Mater
+                    self.combined_matrix[i,j,2] = 80
                 elif 70 > image[i][j] >= 50:
                     t2_image[i][j] = int(self.rescaleT2(100))  # Gray Mater
+                    self.combined_matrix[i,j,2] = 100
                 elif 50 > image[i][j] >= 26:
                     t2_image[i][j] = int(self.rescaleT2(120))  # Gray Mater
+                    self.combined_matrix[i,j,2] = 120
                 else:
                     t2_image[i][j] = int(self.rescaleT2(500))  # CSF
+                    self.combined_matrix[i,j,2] = 500
         return t2_image
 
     def pd(self, image):
@@ -763,14 +776,20 @@ class Phantom(qtw.QWidget):
             for j in range(image.shape[1]):
                 if image[i][j] >= 220:
                     PD_image[i][j] = int(self.rescalePD(80))  # scalp
+                    self.combined_matrix[i,j,0] = 80
                 elif 120 > image[i][j] >= 95:
                     PD_image[i][j] = int(self.rescalePD(55))  # white Mater
+                    self.combined_matrix[i,j,0] = 55
                 elif 95 > image[i][j] >= 70:
                     PD_image[i][j] = int(self.rescalePD(61.7))  # white Mater
+                    self.combined_matrix[i,j,0] = 61.7
                 elif 70 > image[i][j] >= 50:
                     PD_image[i][j] = int(self.rescalePD(74.5))  # Gray Mater
+                    self.combined_matrix[i,j,0] = 74.5
                 elif 50 > image[i][j] >= 26:
                     PD_image[i][j] = int(self.rescalePD(95))  # Gray Mater
+                    self.combined_matrix[i,j,0] = 95
                 else:
                     PD_image[i][j] = int(self.rescalePD(98))  # CSF
+                    self.combined_matrix[i,j,0] = 98
         return PD_image
