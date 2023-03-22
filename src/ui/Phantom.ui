@@ -449,7 +449,12 @@
            </spacer>
           </item>
           <item>
-           <widget class="QComboBox" name="comboBox">
+           <widget class="QComboBox" name="comboBox_contrastType">
+            <item>
+             <property name="text">
+              <string>Original</string>
+             </property>
+            </item>
             <item>
              <property name="text">
               <string>PD</string>

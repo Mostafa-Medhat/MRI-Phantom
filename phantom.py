@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import QFileDialog, QSizePolicy, QLabel
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import multiprocessing
+from phantominator import shepp_logan
 
 from matplotlib import pyplot as plt
 import math as m
@@ -47,6 +48,12 @@ class Phantom(qtw.QWidget):
         self.Running_K_Space = 0
         self.Reload_K_Space = 0
 
+        self.img_t1 = None
+        self.img_t2 = None
+        self.img_pd = None
+
+        self.combined_matrix = None
+
         self.Gmiddle = 1
 
         self.figure_sequence = Figure(dpi=80)
@@ -75,6 +82,7 @@ class Phantom(qtw.QWidget):
         self.horizontalSlider_brightness.sliderReleased.connect(lambda: self.phantom_brightness())
         self.horizontalSlider_contrast.sliderReleased.connect(lambda: self.phantom_contrast())
         self.canvas_Orig_Spat.mpl_connect('button_press_event', self.getPixel)
+        self.comboBox_contrastType.currentIndexChanged.connect(lambda: self.show_contrast())
 
     def sequence_layout(self, figure, layout):
         ######################## Sequence Layout #########################
@@ -252,18 +260,41 @@ class Phantom(qtw.QWidget):
             # Compute the magnitude spectrum of the Fourier Transform
             self.axis_Orig_Fourier.imshow(magnitude_spectrum, cmap='gray')
             self.canvas_Orig_Fourier.draw()
+            self.generate_contrast()
+            self.get_combined_values()
+
+    def generate_contrast(self):
+        self.img_t1 = self.t1(self.img)
+        self.img_t2 = self.t2(self.img)
+        self.img_pd = self.pd(self.img)
+
+    def show_contrast(self):
+        if (self.comboBox_contrastType.currentText() == "Original"):
+            self.axis_Orig_Spat.imshow(self.img, cmap='gray')
+        elif (self.comboBox_contrastType.currentText() == "T1"):
+            self.axis_Orig_Spat.imshow(self.img_t1, cmap='gray')
+        elif (self.comboBox_contrastType.currentText() == "T2"):
+            self.axis_Orig_Spat.imshow(self.img_t2, cmap='gray')
+        elif (self.comboBox_contrastType.currentText() == "PD"):
+            self.axis_Orig_Spat.imshow(self.img_pd, cmap='gray')
+
+        self.canvas_Orig_Spat.draw()
 
     def getPixel(self, event):
         # Get the position of the mouse click
-        x = int(round(event.xdata))
-        y = int(round(event.ydata))
+        x = int(round(event.xdata))     # Rows
+        y = int(round(event.ydata))     # Columns
 
         # Get the pixel value at the clicked position
-        img_combined = np.zeros((self.img.shape[0], self.img.shape[1], 1), dtype=np.uint8)
-        img_combined[:, :, 0] = self.img
-        pixel_values = img_combined[y, x]
-        value = (pixel_values[0] * ((120 - 2) / 255)) + 2
-        self.label_pixel.setText(f'Pixel PD value at ({x}, {y}): {round(value, 4)}')
+        # img_combined = np.zeros((self.img.shape[0], self.img.shape[1], 1), dtype=np.uint8)
+        # img_combined[:, :, 0] = self.img
+        # pixel_values = img_combined[y, x]
+        # value = (pixel_values[0] * ((120 - 2) / 255)) + 2
+        pd_value = self.combined_matrix[y, x, 0]
+        t1_value = self.combined_matrix[y, x, 1]
+        t2_value = self.combined_matrix[y, x, 2]
+        self.label_pixel.setText(
+            f'Pixel at ({x}, {y}): PD value = {round(pd_value, 2)} , T1 Value = {round(t1_value, 2)} , T2 Value = {round(t2_value, 2)}')
 
     def start_K_Space_threading(self):
         # self.process = multiprocessing.Process(StreamThread)
@@ -276,7 +307,8 @@ class Phantom(qtw.QWidget):
         else:
             self.Reload_K_Space = 0
 
-        K_Space_Thread = threading.Thread(target=self.generate_kspace) # replace with this (self.Run_Sequence) to run the custom sequence
+        K_Space_Thread = threading.Thread(
+            target=self.generate_kspace)  # replace with this (self.Run_Sequence) to run the custom sequence
 
         K_Space_Thread.start()
 
@@ -472,74 +504,67 @@ class Phantom(qtw.QWidget):
                 PD_Matrix[i, j] = (image[i, j] * ((120 - 2) / 255)) + 2
         return PD_Matrix
 
+    def get_combined_values(self):
+        self.combined_matrix = np.zeros((self.img.shape[0], self.img.shape[1], 3))
+        self.combined_matrix[:, :, 0] = self.get_PD_value(self.img)
+        self.combined_matrix[:, :, 1] = self.get_T1_value(self.img)
+        self.combined_matrix[:, :, 2] = self.get_T2_value(self.img)
+
     def vectorMagnitude(self, vector):
         return np.sqrt(np.power(vector[0], 2) + np.power(vector[1], 2) + np.power(vector[2], 2))
 
-    def Decay_Recovery_Matrix(self, IMG_Vectors, T1, T2, t):
-        recoved_Matrix = np.zeros(np.shape(IMG_Vectors))
-        for i in range(IMG_Vectors.shape[0]):
-            for j in range(IMG_Vectors.shape[1]):
-                decay_recovery = np.matrix([[np.exp(-t / T2[i, j]), 0, 0],
-                                            [0, np.exp(-t / T2[i, j]), 0],
-                                            [0, 0, np.exp(-t / T1[i, j])]])
-
-                recoved_Matrix[i, j] = np.dot(decay_recovery, IMG_Vectors[i, j]) + np.array(
-                    [0, 0, self.vectorMagnitude(IMG_Vectors[i, j]) * (1 - np.exp(-t / T1[i, j]))])
-
-        return recoved_Matrix
     #####################################################################################################################
 
     ############## functions to read current sequence and apply it with decay recovery ##################################
-    def Gx_Rotation(self,matrix,Gx_step_deg):
+    def Gx_Rotation(self, matrix, Gx_step_deg):
         Gx_Rotated_Matrix = np.zeros(np.shape(matrix))
 
         for i in range(Gx_Rotated_Matrix.shape[0]):
             for j in range(Gx_Rotated_Matrix.shape[1]):
                 Gx_rotation_Theta = np.radians(Gx_step_deg * j)
-                Gx_Rotated_Matrix[i , j] = np.dot(self.Rz(Gx_rotation_Theta),matrix[i,j])
-            
+                Gx_Rotated_Matrix[i, j] = np.dot(self.Rz(Gx_rotation_Theta), matrix[i, j])
+
         return Gx_Rotated_Matrix
 
-    def Gy_Rotation(self,matrix,Gy_step_deg):
+    def Gy_Rotation(self, matrix, Gy_step_deg):
         Gy_Rotated_Matrix = np.zeros(np.shape(matrix))
 
         for i in range(Gy_Rotated_Matrix.shape[0]):
             for j in range(Gy_Rotated_Matrix.shape[1]):
                 Gy_rotation_Theta = np.radians(Gy_step_deg * i)
-                Gy_Rotated_Matrix[i , j] = np.dot(self.Rz(Gy_rotation_Theta),matrix[i,j])
+                Gy_Rotated_Matrix[i, j] = np.dot(self.Rz(Gy_rotation_Theta), matrix[i, j])
 
         return Gy_Rotated_Matrix
-    
 
-    def RF(self,matrix,amp):
+    def RF(self, matrix, amp):
         TRF_rotatedMatrix = self.RF_Rotation(matrix, amp)
         return TRF_rotatedMatrix
 
-    def Gy(self,matrix,amp,duration):
+    def Gy(self, matrix, amp, duration):
         min = 0
         max = duration
         if self.Gmiddle and duration > 1:
-            min = int(-duration/2)
-            max = int(duration/2)
-        
-        for deltaT in range(min,max):
+            min = int(-duration / 2)
+            max = int(duration / 2)
+
+        for deltaT in range(min, max):
             # Gy_step = int((amp / (max-min)) * (deltaT+1))
-            Gy_rotated_Matrix = self.Gy_Rotation(matrix,amp)
+            Gy_rotated_Matrix = self.Gy_Rotation(matrix, amp)
         # self.Gy_Ky += 1
         return Gy_rotated_Matrix
-            
-    def Gx(self,matrix,amp,duration,readout = 0):
-        returned_K_Space_array = np.zeros(matrix.shape[1],dtype=np.complex_)
+
+    def Gx(self, matrix, amp, duration, readout=0):
+        returned_K_Space_array = np.zeros(matrix.shape[1], dtype=np.complex_)
 
         min = 0
         max = duration
         if self.Gmiddle and duration > 1:
-            min = int(-duration/2)
-            max = int(duration/2)
+            min = int(-duration / 2)
+            max = int(duration / 2)
 
-        for deltaT in range(min,max):
-            Gx_step = (amp / (max-min)) * deltaT
-            Gx_rotated_Matrix = self.Gx_Rotation(matrix,Gx_step)
+        for deltaT in range(min, max):
+            Gx_step = (amp / (max - min)) * deltaT
+            Gx_rotated_Matrix = self.Gx_Rotation(matrix, Gx_step)
             if readout:
                 returned_K_Space_array[-deltaT] = self.readOut(Gx_rotated_Matrix)
         if readout:
@@ -547,32 +572,31 @@ class Phantom(qtw.QWidget):
         else:
             return Gx_rotated_Matrix
 
-    def readOut(self,matrix):
-        
+    def readOut(self, matrix):
+
         sigmaX = np.sum(matrix[:, :, 0])
         sigmaY = np.sum(matrix[:, :, 1])
         valueToAdd = complex(sigmaX, sigmaY)
         return valueToAdd
-    
-    def generate_sequence(self,dataFram):
+
+    def generate_sequence(self, dataFram):
         shift = 0
         Translated_Sequence = np.zeros([1000])
-        for i in range(int(self.comboBox_kspace_size.currentText())): #int(dataFram['PG'].NumOfRep) 
+        for i in range(int(self.comboBox_kspace_size.currentText())):  # int(dataFram['PG'].NumOfRep)
             rfpos = dataFram['RF'].Pos
             rfduration = dataFram['RF'].Duration
-            Translated_Sequence[(shift+rfpos)] = 1
+            Translated_Sequence[(shift + rfpos)] = 1
             gypos = dataFram['PG'].Pos
             gyduration = dataFram['PG'].Duration
-            Translated_Sequence[(shift+gypos)] = 2
+            Translated_Sequence[(shift + gypos)] = 2
             gxpos = dataFram['FG'].Pos
             # gxduration = int(self.comboBox_kspace_size.currentText())
             gxduration = dataFram['FG'].Duration
-            Translated_Sequence[(shift+gxpos)] = 3
-            shift += rfpos+gypos+gxpos  #rfpos+rfduration+gypos+gyduration+gxpos+gxduration
+            Translated_Sequence[(shift + gxpos)] = 3
+            shift += rfpos + gypos + gxpos  # rfpos+rfduration+gypos+gyduration+gxpos+gxduration
         # print(Translated_Sequence)
         return Translated_Sequence
-    
-    
+
     def Run_Sequence(self):
 
         self.axis_kspace.clear()
@@ -592,10 +616,10 @@ class Phantom(qtw.QWidget):
 
         Min_KX, Max_KX, Min_KY, Max_KY = self.setGradientLimits(IMG, Gx_zero_in_middel=1, Gy_zero_in_middel=1)
 
-        IMG_vector[:,:,2] = IMG[:,:]
+        IMG_vector[:, :, 2] = IMG[:, :]
 
         # seq = self.generate_sequence(self.df)
-        
+
         Gy_counter = Min_KY
 
         Gx_counter = Min_KX
@@ -622,29 +646,30 @@ class Phantom(qtw.QWidget):
                 self.Reload_K_Space = 0
                 self.Running_K_Space = 0
                 return
-            
 
-            #RF
+            # RF
             if seq[i] == 1:
                 if i == 0:
                     rotMatrix = IMG_vector
                 else:
-                    rotMatrix = self.Decay_Recovery_Matrix(rotMatrix,T1,T2,(TR-TE))
-                rotMatrix = self.RF(rotMatrix,int(self.df['RF'].Amp))
+                    rotMatrix = self.Decay_Recovery_Matrix(rotMatrix, T1, T2, (TR - TE))
+                rotMatrix = self.RF(rotMatrix, int(self.df['RF'].Amp))
 
-            #Gy
+            # Gy
             if seq[i] == 2:
-                rotMatrix = self.Gy(rotMatrix,amp= (360/IMG_vector.shape[0])*Gy_counter,duration= int(self.df['PG'].Duration))
+                rotMatrix = self.Gy(rotMatrix, amp=(360 / IMG_vector.shape[0]) * Gy_counter,
+                                    duration=int(self.df['PG'].Duration))
                 if Gy_counter == (Max_KY):
                     Gy_counter = Min_KY
                 else:
                     Gy_counter += 1
 
-            #Gx
+            # Gx
             if seq[i] == 3:
                 # rotMatrix = self.Gx(rotMatrix,-180,int(IMG_vector.shape[1]/2),0)
-                rotMatrix = self.Decay_Recovery_Matrix(rotMatrix,T1,T2,TE)
-                rotMatrix,IMG_K_Space[-Gy_counter,:] = self.Gx(rotMatrix,amp= int(self.df['FG'].Amp),duration= int(self.df['FG'].Duration),readout=1)
+                rotMatrix = self.Decay_Recovery_Matrix(rotMatrix, T1, T2, TE)
+                rotMatrix, IMG_K_Space[-Gy_counter, :] = self.Gx(rotMatrix, amp=int(self.df['FG'].Amp),
+                                                                 duration=int(self.df['FG'].Duration), readout=1)
                 # print(IMG_K_Space)
                 # updates the K_space image for every row added to it with the addition of applying fftshift to it
                 w, h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(
@@ -663,89 +688,93 @@ class Phantom(qtw.QWidget):
                 self.canvas_reconstruct.draw()
                 # rotMatrix = self.Decay_Recovery_Matrix(rotMatrix,T1,T2,(TR-TE))
                 print(Gy_counter)
-        
+
         self.Running_K_Space = 0
         self.Reload_K_Space = 0
 
+    def Decay_Recovery_Matrix(self, IMG_Vectors, T1, T2, t):
+        recoved_Matrix = np.zeros(np.shape(IMG_Vectors))
+        for i in range(IMG_Vectors.shape[0]):
+            for j in range(IMG_Vectors.shape[1]):
+                decay_recovery = np.matrix([[np.exp(-t / T2[i, j]), 0, 0],
+                                            [0, np.exp(-t / T2[i, j]), 0],
+                                            [0, 0, np.exp(-t / T1[i, j])]])
+
+                recoved_Matrix[i, j] = np.dot(decay_recovery, IMG_Vectors[i, j]) + np.array(
+                    [0, 0, self.vectorMagnitude(IMG_Vectors[i, j]) * (1 - np.exp(-t / T1[i, j]))])
+
+        return recoved_Matrix
 
     ########################## get T1, T2, PD images###########################################
     ########these functions take normal phantom image and return T1, T2, PD images
 
-    def rescaleT1(self,t1Value):
-        scaledT1 = ((t1Value - 200)/(2000-200))*255 # t1Value = (scaledT1*((2000-200)/255))+200
+    def rescaleT1(self, t1Value):
+        scaledT1 = ((t1Value - 200) / (2000 - 200)) * 255  # t1Value = (scaledT1*((2000-200)/255))+200
         return scaledT1
         # return (scaledT1*((2000-200)/255))+200
+
     # def rescaleT12(t12Value):
     #     scaledT12 = 255-t12Value
     #     return scaledT12
 
-    def rescaleT2(self,t2Value):
-        scaledT2 = ((t2Value - 40)/(500-40))*255 # t2Value = (scaledT2*((500-40)/255))+40
+    def rescaleT2(self, t2Value):
+        scaledT2 = ((t2Value - 40) / (500 - 40)) * 255  # t2Value = (scaledT2*((500-40)/255))+40
         return scaledT2
 
-    def rescalePD(self,PDValue):
-        scaledPD = ((PDValue - 2)/(120-2))*255 # PDValue = (scaledPD*((120-2)/255))+2
+    def rescalePD(self, PDValue):
+        scaledPD = ((PDValue - 2) / (120 - 2)) * 255  # PDValue = (scaledPD*((120-2)/255))+2
         return scaledPD
 
-    def t1(self,image):
-        t1_image = np.zeros((image.shape[0],image.shape[1]),dtype=np.uint8)
+    def t1(self, image):
+        t1_image = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 if image[i][j] >= 220:
-                    t1_image[i][j] = int(self.rescaleT1(324)) # scalp
+                    t1_image[i][j] = int(self.rescaleT1(324))  # scalp
                 elif 120 > image[i][j] >= 95:
-                    t1_image[i][j] = int(self.rescaleT1(533)) # white Mater
+                    t1_image[i][j] = int(self.rescaleT1(533))  # white Mater
                 elif 95 > image[i][j] >= 70:
-                    t1_image[i][j] = int(self.rescaleT1(583)) # white Mater
+                    t1_image[i][j] = int(self.rescaleT1(583))  # white Mater
                 elif 70 > image[i][j] >= 50:
-                    t1_image[i][j] = int(self.rescaleT1(857)) # Gray Mater
+                    t1_image[i][j] = int(self.rescaleT1(857))  # Gray Mater
                 elif 50 > image[i][j] >= 26:
-                    t1_image[i][j] = int(self.rescaleT1(926)) # Gray Mater
+                    t1_image[i][j] = int(self.rescaleT1(926))  # Gray Mater
                 else:
-                    t1_image[i][j] = int(self.rescaleT1(2000)) # CSF
+                    t1_image[i][j] = int(self.rescaleT1(2000))  # CSF
         return t1_image
 
-    # def t1Method2(image2):
-    #     t1_image2 = np.zeros((image2.shape[0],image2.shape[1]),dtype=np.uint8)
-    #     for i in range(image2.shape[0]):
-    #         for j in range(image2.shape[1]):
-    #             t1_image2[i][j] = int(rescaleT12(image2[i][j]))
-    #     return t1_image2
-
-        ##most values are 77, 52, 26, 103, 
-
-    def t2(self,image):
-        t2_image = np.zeros((image.shape[0],image.shape[1]),dtype=np.uint8)
+    def t2(self, image):
+        t2_image = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 if image[i][j] >= 220:
-                    t2_image[i][j] = int(self.rescaleT2(70)) # scalp
+                    t2_image[i][j] = int(self.rescaleT2(70))  # scalp
                 elif 120 > image[i][j] >= 95:
-                    t2_image[i][j] = int(self.rescaleT2(50)) # white Mater
+                    t2_image[i][j] = int(self.rescaleT2(50))  # white Mater
                 elif 95 > image[i][j] >= 70:
-                    t2_image[i][j] = int(self.rescaleT2(80)) # white Mater
+                    t2_image[i][j] = int(self.rescaleT2(80))  # white Mater
                 elif 70 > image[i][j] >= 50:
-                    t2_image[i][j] = int(self.rescaleT2(100)) # Gray Mater
+                    t2_image[i][j] = int(self.rescaleT2(100))  # Gray Mater
                 elif 50 > image[i][j] >= 26:
-                    t2_image[i][j] = int(self.rescaleT2(120)) # Gray Mater
+                    t2_image[i][j] = int(self.rescaleT2(120))  # Gray Mater
                 else:
-                    t2_image[i][j] = int(self.rescaleT2(500)) # CSF
+                    t2_image[i][j] = int(self.rescaleT2(500))  # CSF
         return t2_image
 
-    def PD(self,image):
-        PD_image = np.zeros((image.shape[0],image.shape[1]),dtype=np.uint8)
+    def pd(self, image):
+        PD_image = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
         for i in range(image.shape[0]):
             for j in range(image.shape[1]):
                 if image[i][j] >= 220:
-                    PD_image[i][j] = int(self.rescalePD(80)) # scalp
+                    PD_image[i][j] = int(self.rescalePD(80))  # scalp
                 elif 120 > image[i][j] >= 95:
-                    PD_image[i][j] = int(self.rescalePD(55)) # white Mater
+                    PD_image[i][j] = int(self.rescalePD(55))  # white Mater
                 elif 95 > image[i][j] >= 70:
-                    PD_image[i][j] = int(self.rescalePD(61.7)) # white Mater
+                    PD_image[i][j] = int(self.rescalePD(61.7))  # white Mater
                 elif 70 > image[i][j] >= 50:
-                    PD_image[i][j] = int(self.rescalePD(74.5)) # Gray Mater
+                    PD_image[i][j] = int(self.rescalePD(74.5))  # Gray Mater
                 elif 50 > image[i][j] >= 26:
-                    PD_image[i][j] = int(self.rescalePD(95)) # Gray Mater
+                    PD_image[i][j] = int(self.rescalePD(95))  # Gray Mater
                 else:
-                    PD_image[i][j] = int(self.rescalePD(98)) # CSF
+                    PD_image[i][j] = int(self.rescalePD(98))  # CSF
         return PD_image
