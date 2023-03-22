@@ -78,7 +78,6 @@ class Phantom(qtw.QWidget):
         self.pushButton_clear.clicked.connect(lambda: self.clear_all())
         self.pushButton_openPhantom.clicked.connect(lambda: self.phantom_read())
         self.pushButton_startReconstruct.clicked.connect(lambda: self.start_K_Space_threading())
-        # self.comboBox_kspace_size.currentIndexChanged.connect(lambda: self.start_K_Space_threading())
         self.horizontalSlider_brightness.sliderReleased.connect(lambda: self.phantom_brightness())
         self.horizontalSlider_contrast.sliderReleased.connect(lambda: self.phantom_contrast())
         self.canvas_Orig_Spat.mpl_connect('button_press_event', self.getPixel)
@@ -155,7 +154,7 @@ class Phantom(qtw.QWidget):
 
         #
         PG_Duration = np.linspace(0, dataFrame['PG'].Duration, 100)
-        for i in range(-dataFrame['PG'].Amp, dataFrame['PG'].Amp, 1):
+        for i in range(-dataFrame['PG'].Amp, dataFrame['PG'].Amp + 1, 1):
             axes[2].plot(PG_Duration + dataFrame['PG'].Pos,
                          (i * SS_step), color=colors[2])
         axes[2].set_ylabel("PG")
@@ -182,11 +181,12 @@ class Phantom(qtw.QWidget):
         canvas.draw()
 
     def custom_sequence(self):
-        print("Entered")
         if (self.df is not None):
             self.df_custom = self.df.copy()
             print(self.df_custom)
             self.df_custom['RF'].Amp = self.spinBox_RF.value()
+            self.df_custom['TR'].Pos = self.spinBox_TR.value()
+            self.df_custom['TE'].Pos = self.spinBox_TE.value()
             print(self.df_custom)
 
             self.plotting_sequence(self.axes_sequence_custom, self.canvas_sequence_custom, self.df_custom)
@@ -286,10 +286,6 @@ class Phantom(qtw.QWidget):
         y = int(round(event.ydata))     # Columns
 
         # Get the pixel value at the clicked position
-        # img_combined = np.zeros((self.img.shape[0], self.img.shape[1], 1), dtype=np.uint8)
-        # img_combined[:, :, 0] = self.img
-        # pixel_values = img_combined[y, x]
-        # value = (pixel_values[0] * ((120 - 2) / 255)) + 2
         pd_value = self.combined_matrix[y, x, 0]
         t1_value = self.combined_matrix[y, x, 1]
         t2_value = self.combined_matrix[y, x, 2]
