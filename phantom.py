@@ -48,6 +48,7 @@ class Phantom(qtw.QWidget):
         self.Running_K_Space = 0
         self.Reload_K_Space = 0
 
+
         self.img_t1 = None
         self.img_t2 = None
         self.img_pd = None
@@ -327,6 +328,7 @@ class Phantom(qtw.QWidget):
         self.axis_kspace.imshow(abs((IMG_K_Space)), cmap='gray')
 
         Min_KX, Max_KX, Min_KY, Max_KY = self.setGradientLimits(IMG, Gx_zero_in_middel=1, Gy_zero_in_middel=1)
+        print(Min_KX, Max_KX, Min_KY, Max_KY)
 
         # IMG_vector[:,:,:] = 0
 
@@ -469,7 +471,7 @@ class Phantom(qtw.QWidget):
         print(self.i)
         brightness = int(self.horizontalSlider_brightness.value())
         new_brightness = cv2.addWeighted(self.img, 1, self.img, 0, brightness)
-        self.axis_Orig_Spat.imshow(new_brightness, cmap='gray')
+        self.axis_Orig_Spat.imshow(new_brightness, cmap='gray', vmin = 0)
         self.canvas_Orig_Spat.draw()
 
     def phantom_contrast(self):
