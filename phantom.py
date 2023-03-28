@@ -306,7 +306,7 @@ class Phantom(qtw.QWidget):
             self.Reload_K_Space = 0
 
         K_Space_Thread = threading.Thread(
-            target=self.generate_kspace)  # replace with this (self.Run_Sequence) to run the custom sequence
+            target=self.vecK_Space)  # replace with this (self.Run_Sequence) to run the custom sequence
 
         K_Space_Thread.start()
 
@@ -403,17 +403,17 @@ class Phantom(qtw.QWidget):
         return
 
     def Rx(self, theta):
-        return np.matrix([[1, 0, 0],
+        return np.array([[1, 0, 0],
                           [0, m.cos(theta), -m.sin(theta)],
                           [0, m.sin(theta), m.cos(theta)]])
 
     def Ry(self, theta):
-        return np.matrix([[m.cos(theta), 0, m.sin(theta)],
+        return np.array([[m.cos(theta), 0, m.sin(theta)],
                           [0, 1, 0],
                           [-m.sin(theta), 0, m.cos(theta)]])
 
     def Rz(self, theta):
-        return np.matrix([[m.cos(theta), -m.sin(theta), 0],
+        return np.array([[m.cos(theta), -m.sin(theta), 0],
                           [m.sin(theta), m.cos(theta), 0],
                           [0, 0, 1]])
 
@@ -795,3 +795,75 @@ class Phantom(qtw.QWidget):
                     PD_image[i][j] = int(self.rescalePD(98))  # CSF
                     self.combined_matrix[i,j,0] = 98
         return PD_image
+    
+
+    ################### try the vectorization method #########################3
+    def vecK_Space(self):
+
+        self.axis_kspace.clear()
+        self.axis_kspace.set_yticks([])
+        self.canvas_kspace.draw()
+
+
+        IMG = cv2.resize(self.img,
+                         (int(self.comboBox_kspace_size.currentText()), int(self.comboBox_kspace_size.currentText())))
+
+        IMG_K_Space = np.zeros((IMG.shape[0], IMG.shape[1]), dtype=np.complex_)
+
+        IMG_vector = np.zeros((IMG.shape[0], IMG.shape[1], 3), dtype=np.float_)
+
+        # K_Space = np.zeros((IMG.shape),dtype=np.complex_)
+
+        IMG_vector[:, :, 2] = IMG[:, :]
+
+        sliceMatrix = IMG_vector.copy()
+
+        for Ky in range(IMG_vector.shape[0]):
+
+            self.Running_K_Space = 1
+
+            # check if k_Space relaod is needed
+            if self.Reload_K_Space == 1:
+                self.Reload_K_Space = 0
+                self.Running_K_Space = 0
+                return
+
+
+            sliceMatrix = IMG_vector.copy()
+            sliceMatrix = np.squeeze(np.matmul(self.Rx(np.radians(90)),np.expand_dims(IMG_vector,axis=(-1))),axis=(-1))
+            GyAngles = np.linspace(0,((360-(360 / (IMG_vector.shape[0]))) * Ky),IMG_vector.shape[0])
+            # print("gy rotations:",GyAngles)
+            GyAnglesMat = np.array(list(map(lambda theta: [self.Rz(np.radians(theta))],GyAngles))) #to rotate rows
+            sliceMatrix = np.squeeze(np.matmul(GyAnglesMat,np.expand_dims(sliceMatrix,axis=(-1))),axis=(-1))
+            # GxRotatedMat = GyRotatedMat
+            for Kx in range(IMG_vector.shape[1]):
+                GxAngles = np.linspace(0,(360-(360 / (IMG_vector.shape[1]))),IMG_vector.shape[1])
+                # print("gx rotations:",GxAngles)
+                GxAnglesMat = np.array(list(map(lambda theta: self.Rz(np.radians(theta)),GxAngles))) #to rotate cols
+                sliceMatrix = np.squeeze(np.matmul(GxAnglesMat,np.expand_dims(sliceMatrix,axis=(-1))),axis=(-1))
+                sigmaX = np.sum(sliceMatrix[:, :, 0])
+                sigmaY = np.sum(sliceMatrix[:, :, 1]) 
+                IMG_K_Space[-Ky,-Kx-1] = complex(sigmaX,sigmaY)
+
+            print(Ky)
+
+            # shift + tab the under section to mke the procecessing way faster as the plotting takes time
+            w, h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(
+                    self.figure_Orig_Spat.get_figheight() * self.figure_Orig_Spat.dpi)
+
+            k_space_magnitude_spectrum = 20 * np.log(abs(np.fft.fftshift(IMG_K_Space)))
+            k_space_magnitude_spectrum = cv2.resize(k_space_magnitude_spectrum, (w, h), interpolation=cv2.INTER_AREA)
+            self.axis_kspace.imshow(k_space_magnitude_spectrum, cmap='gray')
+            self.axis_kspace.set_yticks([])
+            self.canvas_kspace.draw()
+            # update the reconstructed image for every row added to the K_Space
+            IMG_back = np.fft.ifft2(IMG_K_Space)
+            abs_img_back = abs(IMG_back)
+            abs_img_back = cv2.resize(abs_img_back, (w, h), interpolation=cv2.INTER_AREA)
+            self.axis_reconstruct.imshow(abs_img_back, cmap='gray')
+            self.canvas_reconstruct.draw()
+            # rotMatrix = self.Decay_Recovery_Matrix(rotMatrix,T1,T2,(TR-TE))
+        
+        self.Running_K_Space = 0
+        self.Reload_K_Space = 0
+        return
