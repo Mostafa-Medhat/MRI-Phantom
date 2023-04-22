@@ -1,8 +1,8 @@
 {
     "RF" : {
-        "Amp" : 5,
+        "Amp" : 10,
         "Pos" : 0,
-        "Duration" : 4
+        "Duration" : 1
         },
     "SS" : {
         "Amp" : 3,
@@ -10,14 +10,16 @@
         "Duration" : 4
         },
     "PG" : {
-        "Amp" : 3,
+        "Amp" : 360,
         "Pos" : 4,
-        "Duration" : 4
+        "Duration" : 4,
+        "changeForIter" : 1
         },
     "FG" : {
-        "Amp" : 6,
+        "Amp" : 360,
         "Pos" : 8,
-        "Duration" : 8
+        "Duration" : 8,
+        "changeForIter" : 0
         },
     "RO" : {
         "Amp" : 6,

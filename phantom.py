@@ -36,6 +36,12 @@ from matplotlib.figure import Figure
 from scipy.stats import norm
 
 
+class Gradient:
+    def __init__(self,Amp,GxorY,changedForIter) -> None:
+        self.gradientAmp = Amp
+        self.GxorY = GxorY
+        self.changedForIteration = changedForIter
+
 class Phantom(qtw.QWidget):
     def __init__(self):
         super().__init__()
@@ -306,7 +312,7 @@ class Phantom(qtw.QWidget):
             self.Reload_K_Space = 0
 
         K_Space_Thread = threading.Thread(
-            target=self.vecK_Space)  # replace with this (self.Run_Sequence) to run the custom sequence
+            target=self.customKSpaceVec)  # replace with this (self.Run_Sequence) to run the custom sequence
 
         K_Space_Thread.start()
 
@@ -867,3 +873,142 @@ class Phantom(qtw.QWidget):
         self.Running_K_Space = 0
         self.Reload_K_Space = 0
         return
+    ############################### custom sequence with vectorization method ############################################
+    
+    def generate_Sequence(self ,IMG,dataFram):
+
+        RFTime = np.zeros(1000)
+        GyTime = np.zeros(1000)
+        GxTime = np.zeros(1000)
+        ReadoutTime = np.zeros(1000)
+
+        rfpos = int(dataFram['RF'].Pos)
+        rfdur = int(dataFram['RF'].Duration)
+        RFTime[rfpos:rfpos+rfdur] = int(dataFram['RF'].Amp)
+        gypos = int(dataFram['PG'].Pos)
+        gydur = IMG.shape[0] #optimum
+        GyTime[gypos:gypos+gydur] = int(dataFram['PG'].Amp)
+        gxpos = gypos + gydur #optimum
+        gxdur = IMG.shape[1] #optimum
+        GxTime[gxpos:gxpos+gxdur] = int(dataFram['FG'].Amp)
+        ROpos = gxpos
+        ROdur = gxdur
+        ReadoutTime[ROpos:ROpos+ROdur] = 1
+
+        return RFTime, GyTime, GxTime, ReadoutTime
+    
+    def gradientRotAngles(self,imgVec,maxAngle,GXorY:bool,withReadOut,changedForIteration:bool,iterationCont = 0):
+        if GXorY:
+            size = imgVec.shape[1]
+        else:
+            size = imgVec.shape[0]
+        if withReadOut:
+            if changedForIteration:
+                Angles = np.linspace(0,(maxAngle-(maxAngle / (size)))* ((int(size/2))-iterationCont),size)#but amplitude
+            else:
+                Angles = np.linspace(0,(maxAngle-(maxAngle / (size))),size)#but amplitude
+        else:
+            if changedForIteration:
+                Angles = np.linspace(0,(((maxAngle-(maxAngle / (size)))/(size)))* ((int(size/2))-iterationCont),size)
+            else:
+                Angles = np.linspace(0,(((maxAngle-(maxAngle / (size)))/(size))),size)
+        
+                
+        return Angles
+    
+    def customKSpaceVec(self):
+
+       
+
+        self.axis_kspace.clear()
+        self.axis_kspace.set_yticks([])
+        self.canvas_kspace.draw()
+
+
+        IMG = cv2.resize(self.img,
+                         (int(self.comboBox_kspace_size.currentText()), int(self.comboBox_kspace_size.currentText())))
+
+        IMG_K_Space = np.zeros((IMG.shape[0], IMG.shape[1]), dtype=np.complex_)
+
+        IMG_vector = np.zeros((IMG.shape[0], IMG.shape[1], 3), dtype=np.float_)
+
+        # K_Space = np.zeros((IMG.shape),dtype=np.complex_)
+        RFTimeline, GyTimeline, GxTimeline, ReadoutTimeline = self.generate_Sequence(IMG_vector,self.df)
+        
+        IMG_vector[:, :, 2] = IMG[:, :]
+
+        sliceMatrix2 = IMG_vector.copy()
+        Kx = -1
+
+        for Ky in range(IMG.shape[0]):
+            self.Running_K_Space = 1
+
+            # check if k_Space relaod is needed
+            if self.Reload_K_Space == 1:
+                self.Reload_K_Space = 0
+                self.Running_K_Space = 0
+                return
+            for i in range(1000):
+                if RFTimeline[i] != 0:
+                    
+                    # sliceMatrix2 = self.Decay_Recovery_Matrix(sliceMatrix2,self.combined_matrix[:,:,1],self.combined_matrix[:,:,2],100)
+                    sliceMatrix2 = np.squeeze(np.matmul(self.Rx(np.radians(RFTimeline[i])),np.expand_dims(sliceMatrix2,axis=(-1))),axis=(-1))
+                    # Kx = -1
+
+                if GyTimeline[i] != 0:
+                    # GyAngles = np.linspace(0,(((360-(360 / (IMGVec.shape[0])))/(IMGVec.shape[0])) * ((int(IMGVec.shape[0]/2))-Ky)),IMGVec.shape[0])#but amplitude
+                    GyAngles = self.gradientRotAngles(IMG_vector,GyTimeline[i],False,ReadoutTimeline[i],True,Ky)
+                    # print("gy rotations:",GyAngles)
+                    GyAnglesMat = np.array(list(map(lambda theta: [self.Rz(np.radians(theta))],GyAngles))) #to rotate rows
+                    sliceMatrix2 = np.squeeze(np.matmul(GyAnglesMat,np.expand_dims(sliceMatrix2,axis=(-1))),axis=(-1))
+                    # Kx = -1
+                    
+                    # sliceMatrix2 = Decay_Recovery_Matrix(sliceMatrix2,T1,T2,2)
+                    # gyStep +=1
+                    # if gyStep >= IMGVec.shape[0]:
+                    #     gyStep = 0
+                
+                if GxTimeline[i] != 0:
+                    # if Kx == -1:
+                    #     sliceMatrix2 = self.Decay_Recovery_Matrix(sliceMatrix2,self.combined_matrix[:,:,1],self.combined_matrix[:,:,2],2)
+                    
+                    # GxAngles = np.linspace(0,(360-(360 / (IMGVec.shape[1]))),IMGVec.shape[1])#but amplitude
+                    GxAngles = self.gradientRotAngles(IMG_vector,GxTimeline[i],True,ReadoutTimeline[i],False)
+                    # print("gx rotations:",GxAngles)
+                    GxAnglesMat = np.array(list(map(lambda theta: self.Rz(np.radians(theta)),GxAngles))) #to rotate cols
+                    sliceMatrix2 = np.squeeze(np.matmul(GxAnglesMat,np.expand_dims(sliceMatrix2,axis=(-1))),axis=(-1))
+                    Kx += 1
+                    if Kx >= IMG_vector.shape[1]:
+                        Kx = 0
+
+
+                if ReadoutTimeline[i] != 0:
+                    # sliceMatrix2 = Decay_Recovery_Matrix(sliceMatrix2,T1,T2,(2/IMGVec.shape[0]))
+                    sigmaX = np.sum(sliceMatrix2[:, :, 0])
+                    sigmaY = np.sum(sliceMatrix2[:, :, 1]) 
+                    IMG_K_Space[-(int(IMG_vector.shape[0]/2))+Ky,-Kx] = complex(sigmaX,sigmaY) #int(Kx*(Ky/IMGVec.shape[0]))
+                    
+            sliceMatrix2 = IMG_vector.copy()
+            # shift + tab the under section to mke the procecessing way faster as the plotting takes time
+            w, h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(
+                    self.figure_Orig_Spat.get_figheight() * self.figure_Orig_Spat.dpi)
+
+            k_space_magnitude_spectrum = 20 * np.log(abs(np.fft.fftshift(IMG_K_Space)))
+            k_space_magnitude_spectrum = cv2.resize(k_space_magnitude_spectrum, (w, h), interpolation=cv2.INTER_AREA)
+            self.axis_kspace.imshow(k_space_magnitude_spectrum, cmap='gray')
+            self.axis_kspace.set_yticks([])
+            self.canvas_kspace.draw()
+            # update the reconstructed image for every row added to the K_Space
+            IMG_back = np.fft.ifft2(IMG_K_Space)
+            abs_img_back = abs(IMG_back)
+            abs_img_back = cv2.resize(abs_img_back, (w, h), interpolation=cv2.INTER_AREA)
+            self.axis_reconstruct.imshow(abs_img_back, cmap='gray')
+            self.canvas_reconstruct.draw()
+        self.Running_K_Space = 0
+        self.Reload_K_Space = 0
+        return
+
+
+
+
+
