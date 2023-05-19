@@ -17,17 +17,21 @@
     "FG" : {
         "Amp" : 6,
         "Pos" : 8,
-        "Duration" : 4
+        "Duration" : 8
         },
     "RO" : {
         "Amp" : 6,
         "Pos" : 8,
-        "Duration" : 4
+        "Duration" : 8
         },
     "TR": {
-        "Pos": 14
+        "Amp": 0,
+        "Pos": 15,
+        "Duration": 0
     },
     "TE": {
-        "Pos": 10
+        "Amp": 0,
+        "Pos": 12,
+        "Duration": 0
     }
 }

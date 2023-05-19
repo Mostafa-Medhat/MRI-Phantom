@@ -98,7 +98,7 @@
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_5">
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="0,1,0,0,0,0,0,0,0,1,0,0,0">
+           <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="0,1,0,0,0,0,0,0,0,0,0,1,0,0,0">
             <item>
              <spacer name="horizontalSpacer_8">
               <property name="orientation">
@@ -177,7 +177,17 @@
              </widget>
             </item>
             <item>
-             <widget class="QSpinBox" name="spinBox_Gradient"/>
+             <widget class="QSpinBox" name="spinBox_TR"/>
+            </item>
+            <item>
+             <widget class="QLabel" name="label_13">
+              <property name="text">
+               <string>TE</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="spinBox_TE"/>
             </item>
             <item>
              <spacer name="horizontalSpacer_7">
@@ -449,7 +459,12 @@
            </spacer>
           </item>
           <item>
-           <widget class="QComboBox" name="comboBox">
+           <widget class="QComboBox" name="comboBox_contrastType">
+            <item>
+             <property name="text">
+              <string>Original</string>
+             </property>
+            </item>
             <item>
              <property name="text">
               <string>PD</string>
