@@ -34,6 +34,11 @@ import threading
 
 from matplotlib.figure import Figure
 from scipy.stats import norm
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from PyQt5.QtWidgets import QMainWindow, QApplication
+from PyQt5.QtCore import Qt
+
 
 
 class Phantom(qtw.QWidget):
@@ -47,6 +52,11 @@ class Phantom(qtw.QWidget):
         self.df_custom = None
         self.Running_K_Space = 0
         self.Reload_K_Space = 0
+        self.old_bright = 0
+        self.old_contrast = 0
+        self.brightness = 1
+        self.prev_x = None
+        self.prev_y = None
 
 
         self.img_t1 = None
@@ -81,6 +91,9 @@ class Phantom(qtw.QWidget):
         self.pushButton_startReconstruct.clicked.connect(lambda: self.start_K_Space_threading())
         self.horizontalSlider_brightness.sliderReleased.connect(lambda: self.phantom_brightness())
         self.horizontalSlider_contrast.sliderReleased.connect(lambda: self.phantom_contrast())
+        # self.canvas_Orig_Spat.mpl_connect('button_press_event', self.getPixel)
+        self.canvas_Orig_Spat.mpl_connect('motion_notify_event', self.update_brightness)
+
         self.canvas_Orig_Spat.mpl_connect('button_press_event', self.getPixel)
         self.comboBox_contrastType.currentIndexChanged.connect(lambda: self.show_contrast())
 
@@ -244,9 +257,11 @@ class Phantom(qtw.QWidget):
                                                                                                         "*.png)")[0]
         if phantom_path != "":
             self.img = cv2.imread(phantom_path, cv2.IMREAD_GRAYSCALE)
-            w, h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(
+            self.img_copy = self.img
+
+            self.w, self.h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(
                 self.figure_Orig_Spat.get_figheight() * self.figure_Orig_Spat.dpi)
-            self.img = cv2.resize(self.img, (w, h), interpolation=cv2.INTER_AREA)
+            self.img = cv2.resize(self.img, (self.w, self.h), interpolation=cv2.INTER_AREA)
             self.axis_Orig_Spat.imshow(self.img, cmap='gray')
             self.canvas_Orig_Spat.draw()
 
@@ -466,19 +481,67 @@ class Phantom(qtw.QWidget):
             self.Gmiddle = 0
         return Set_Min_KX, Set_Max_KX, Set_Min_KY, Set_Max_KY
 
+    def brightnessDrag(self, event):
+        if event.button == 1 and event.inaxes and event.ydata is not None:
+            dy = event.ydata - self.prev_y
+            if abs(dy) > 0:
+                # Update the brightness value based on the vertical motion
+                self.brightness += dy * 0.01
+                self.brightness = max(0.0, min(self.brightness, 1.0))
+                # Set the new brightness value for the image
+                self.img = (self.img_copy * self.brightness)
+                self.img = cv2.resize(self.img, (self.w, self.h), interpolation=cv2.INTER_AREA)
+                self.axis_Orig_Spat.imshow(self.img, cmap='gray')
+                self.canvas_Orig_Spat.draw()
+        self.prev_y = event.ydata
+
+    def update_brightness(self, event):
+        if event.button == Qt.LeftButton:
+            curr_x, curr_y = event.xdata, event.ydata
+
+            if self.prev_x is not None and self.prev_y is not None:
+                # Calculate the absolute difference in x-coordinate and y-coordinate between the current and previous event
+                dx, dy = abs(curr_x - self.prev_x), abs(curr_y - self.prev_y)
+                if dx > dy:
+                    contrast = (event.xdata / self.canvas_Orig_Spat.width())
+                    contrast = int(contrast * 4)
+                    print(contrast)
+                    print("Horizontal")
+                    self.img = np.power(self.img_copy, contrast)
+                else:
+                    # brightness = 1 - (event.ydata / self.canvas_Orig_Spat.height())
+                    # brightness = int(brightness * 100)
+                    print(curr_y - self.prev_y)
+                    print("Vertical")
+                    self.img = self.img - ((curr_y - self.prev_y) / 3)  # We want to add change not the absolute value
+
+                    ################### Overbright & Underbright conditions ##############
+
+            # Update previous event coordinates
+            self.prev_x, self.prev_y = curr_x, curr_y
+
+            self.img = cv2.resize(self.img, (self.w, self.h), interpolation=cv2.INTER_AREA)
+            self.axis_Orig_Spat.imshow(self.img, cmap='gray', vmin=0, vmax=255)
+            self.canvas_Orig_Spat.draw()
+
+
     def phantom_brightness(self):
         self.i += 1
         print(self.i)
         brightness = int(self.horizontalSlider_brightness.value())
+        self.img = cv2.addWeighted(self.img_copy, 1, self.img_copy, 0, brightness)
+        self.img = cv2.resize(self.img, (self.w, self.h), interpolation=cv2.INTER_AREA)
+        self.axis_Orig_Spat.imshow(self.img, cmap='gray', vmin=0, vmax=255)
         new_brightness = cv2.addWeighted(self.img, 1, self.img, 0, brightness)
         self.axis_Orig_Spat.imshow(new_brightness, cmap='gray', vmin = 0)
         self.canvas_Orig_Spat.draw()
 
     def phantom_contrast(self):
         contrast = int(self.horizontalSlider_contrast.value())
-        contrast = contrast / 5
-        new_contrast = np.clip(contrast * self.img, 0, 255).astype(np.uint8)
-        self.axis_Orig_Spat.imshow(new_contrast, cmap='gray')
+        contrast = (contrast / 50) + 1
+        self.img = np.power(self.img_copy, contrast)
+        self.img = cv2.resize(self.img, (self.w, self.h), interpolation=cv2.INTER_AREA)
+        self.axis_Orig_Spat.imshow(self.img, cmap='gray', vmin=0, vmax=255)
         self.canvas_Orig_Spat.draw()
 
     ######################### for the Decay Recovery effect #########################################################
