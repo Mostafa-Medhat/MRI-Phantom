@@ -17,9 +17,9 @@
       "changeForIter": 1
     },
     "FG": {
-      "Amp": [0],
-      "Pos": [0],
-      "Duration": [0],
+     "Amp": [70, 720],
+      "Pos": [1,5],
+      "Duration": [3, 6],
       "changeForIter": 0
     },
     "RO": {
