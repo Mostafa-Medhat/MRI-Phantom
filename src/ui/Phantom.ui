@@ -26,7 +26,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab_1">
       <attribute name="title">
@@ -712,7 +712,7 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_3">
            <item>
-            <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,1">
+            <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,0,1">
              <item alignment="Qt::AlignHCenter">
               <widget class="QLabel" name="label_13">
                <property name="font">
@@ -727,13 +727,27 @@
                </property>
               </widget>
              </item>
+             <item alignment="Qt::AlignHCenter">
+              <widget class="QLabel" name="label_viewerOne">
+               <property name="font">
+                <font>
+                 <pointsize>15</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#ffffff;&quot;&gt;Prep + Seq&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
              <item>
               <widget class="QWidget" name="widget_6" native="true"/>
              </item>
             </layout>
            </item>
            <item>
-            <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,1">
+            <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,1">
              <item alignment="Qt::AlignHCenter">
               <widget class="QLabel" name="label_14">
                <property name="font">
@@ -745,6 +759,20 @@
                </property>
                <property name="text">
                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#aa0000;&quot;&gt;Viewer 2&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+              </widget>
+             </item>
+             <item alignment="Qt::AlignHCenter">
+              <widget class="QLabel" name="label_viewerTwo">
+               <property name="font">
+                <font>
+                 <pointsize>15</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#ffffff;&quot;&gt;Prep + Seq&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
@@ -857,7 +885,7 @@
             </spacer>
            </item>
            <item>
-            <widget class="QComboBox" name="comboBox_4">
+            <widget class="QComboBox" name="comboBox_viewer">
              <property name="minimumSize">
               <size>
                <width>100</width>
@@ -890,7 +918,7 @@
             </spacer>
            </item>
            <item>
-            <widget class="QPushButton" name="pushButton">
+            <widget class="QPushButton" name="pushButton_Draw">
              <property name="minimumSize">
               <size>
                <width>120</width>

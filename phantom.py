@@ -88,10 +88,15 @@ class Phantom(qtw.QWidget):
 
         self.Gmiddle = 1
 
+        self.prep_dic = {"IR Prep": "IRseqTest.json", "T2 Prep": "T2prep.json",
+                         "Tagging Prep": "tagging.json"}
+        self.aqu_dic = {"GRE Seq": "GRE.json", "Spin Echo Seq": "ٍSpinEcho.json", "SSFP Seq": ""}
+
         self.figure_sequence = Figure(dpi=80)
         self.figure_sequence_custom = Figure(dpi=80)
 
         self.phantom_layout()
+        self.drawer_layout()
 
         self.canvas_sequence, self.axis_sequence_RF, self.axis_sequence_SS, self.axis_sequence_PG, self.axis_sequence_FG, self.axis_sequence_RO = self.sequence_layout(
             self.figure_sequence, self.verticalLayout_4)
@@ -117,6 +122,30 @@ class Phantom(qtw.QWidget):
 
         self.canvas_Orig_Spat.mpl_connect('button_press_event', self.getPixel)
         self.comboBox_contrastType.currentIndexChanged.connect(lambda: self.show_contrast())
+        self.pushButton_Draw.clicked.connect(lambda: self.start_K_Space_threading())
+
+
+    def drawer_layout(self,):
+        self.figure_viewer_one = Figure(figsize=(50,50), dpi=100)
+        self.axis_viewer_one = self.figure_viewer_one.add_subplot()
+        self.canvas_viewer_one = FigureCanvas(self.figure_viewer_one)
+        self.axis_viewer_one.set_facecolor('black')
+        self.canvas_viewer_one.figure.set_facecolor("#19232D")
+        self.verticalLayout_3.addWidget(self.canvas_viewer_one)
+
+        self.figure_viewer_two = Figure(figsize=(50,50), dpi=100)
+        self.axis_viewer_two = self.figure_viewer_two.add_subplot()
+        self.canvas_viewer_two = FigureCanvas(self.figure_viewer_two)
+        self.axis_viewer_two.set_facecolor('black')
+        self.canvas_viewer_two.figure.set_facecolor("#19232D")
+        self.verticalLayout_5.addWidget(self.canvas_viewer_two)
+
+        self.viewer_axes = [self.axis_viewer_one,self.axis_viewer_two]
+        for axis in self.viewer_axes:  # removing axes from the figure
+            axis.set_xticks([])
+            axis.set_yticks([])
+
+
 
     def sequence_layout(self, figure, layout):
         ######################## Sequence Layout #########################
@@ -270,6 +299,7 @@ class Phantom(qtw.QWidget):
         for axis in self.axes_phantom:  # removing axes from the figure
             axis.set_xticks([])
             axis.set_yticks([])
+
 
     def phantom_read(self):
 
@@ -677,10 +707,9 @@ class Phantom(qtw.QWidget):
         self.IMG_K_Space = np.zeros((self.IMG.shape),dtype=np.complex_)
         self.sliceMatrix = self.IMG_Vec.copy()
 
-        # prep_sequence_path = "E:/4th year/Second Term/Advanced MRI/Tasks/IRseqTest.json"
-        # prep_sequence_path = ''
-        prep_sequence_path = "E:/4th year/Second Term/Advanced MRI/Tasks/T2prep.json"
-        acc_sequence_path = "E:/4th year/Second Term/Advanced MRI/Tasks/GRE.json"
+      
+        prep_sequence_path = self.prep_dic[self.comboBox_2.currentText()]  # "T2prep.json"
+        acc_sequence_path = self.aqu_dic[self.comboBox_3.currentText()]  # "GRE.json"
         if prep_sequence_path != '':
             prep_dictionary = json.load(open(prep_sequence_path))
             prep_df = pd.DataFrame(prep_dictionary)
@@ -719,9 +748,25 @@ class Phantom(qtw.QWidget):
             abs_img_back = cv2.resize(abs_img_back, (w, h), interpolation=cv2.INTER_AREA)
             self.axis_reconstruct.imshow(abs_img_back, cmap='gray')
             self.canvas_reconstruct.draw()
-            
-        
-        
+
+        text = str(self.comboBox_2.currentText())+ " + " +str(self.comboBox_3.currentText())
+
+        if(self.comboBox_viewer.currentText() == "Viewer 1"):
+            w, h = int(self.figure_viewer_one.get_figwidth() * self.figure_viewer_one.dpi), int(
+                self.figure_viewer_one.get_figheight() * self.figure_viewer_one.dpi)
+            abs_img_back = cv2.resize(abs_img_back, (w, h), interpolation=cv2.INTER_AREA)
+            self.label_viewerOne.setText(text)
+            self.axis_viewer_one.imshow(abs_img_back, cmap='gray')
+            self.canvas_viewer_one.draw()
+
+        elif(self.comboBox_viewer.currentText() == "Viewer 2"):
+            w, h = int(self.figure_viewer_two.get_figwidth() * self.figure_viewer_two.dpi), int(
+                self.figure_viewer_two.get_figheight() * self.figure_viewer_two.dpi)
+            abs_img_back = cv2.resize(abs_img_back, (w, h), interpolation=cv2.INTER_AREA)
+            self.label_viewerTwo.setText(text)
+            self.axis_viewer_two.imshow(abs_img_back, cmap='gray')
+            self.canvas_viewer_two.draw()
+
         self.Running_K_Space = 0
         self.Reload_K_Space = 0
         return
