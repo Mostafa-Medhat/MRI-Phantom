@@ -59,7 +59,7 @@ class Phantom(qtw.QWidget):
         super().__init__()
 
         uic.loadUi("src/ui/Phantom.ui", self)
-        self.comboBox_2.addItem("No Prep")
+        # self.comboBox_2.addItem("No Prep")
 
         self.i = 0
         self.df = None
