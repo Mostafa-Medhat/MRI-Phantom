@@ -873,16 +873,6 @@
                <string>SSFP Seq</string>
               </property>
              </item>
-             <item>
-              <property name="text">
-               <string>STIR Seq</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>FLAIR Seq</string>
-              </property>
-             </item>
             </widget>
            </item>
            <item>

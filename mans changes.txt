@@ -1,6 +1,0 @@
-   self.prep_dic = {"IR Prep": "IRseqTest.json", "T2 Prep": "T2prep.json", "Tagging Prep": "tagging.json"} # Add after line 90
-   self.aqu_dic = {"GRE Seq": "GRE.json", "Spin Echo Seq": "", "SSFP Seq": ""}
-
-
-   prep_sequence_path = self.prep_dic[self.comboBox_2.currentText()]                # "T2prep.json"      Edit line 683
-   acc_sequence_path = self.aqu_dic[self.comboBox_3.currentText()]                 # "GRE.json"

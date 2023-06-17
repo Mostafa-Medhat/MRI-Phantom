@@ -92,9 +92,9 @@ class Phantom(qtw.QWidget):
 
         self.Gmiddle = 1
 
-        self.prep_dic = {"IR Prep": "IRseqTest.json", "T2 Prep": "T2prep.json",
-                         "Tagging Prep": "tagging.json", "No Prep": ""}
-        self.aqu_dic = {"GRE Seq": "GRE.json", "Spin Echo Seq": "SpinEcho.json", "SSFP Seq": "SSFP.json"}
+        self.prep_dic = {"IR Prep": "PrepPulses/IRseqTest.json", "T2 Prep": "PrepPulses/T2prep.json",
+                         "Tagging Prep": "PrepPulses/tagging.json", "No Prep": ""}
+        self.aqu_dic = {"GRE Seq": "Sequences/GRE.json", "Spin Echo Seq": "Sequences/SpinEcho.json", "SSFP Seq": "Sequences/SSFP.json"}
 
         self.figure_sequence = Figure(dpi=80)
         self.figure_sequence_custom = Figure(dpi=80)
