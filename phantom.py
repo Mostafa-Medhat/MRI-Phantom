@@ -59,6 +59,7 @@ class Phantom(qtw.QWidget):
         super().__init__()
 
         uic.loadUi("src/ui/Phantom.ui", self)
+        # self.comboBox_2.addItem("No Prep")
 
         self.i = 0
         self.df = None
@@ -84,13 +85,16 @@ class Phantom(qtw.QWidget):
         self.img_t2 = None
         self.img_pd = None
 
+        self.GyChangeForIter = False
+        self.GxChangeForIter = False
+
         self.combined_matrix = None
 
         self.Gmiddle = 1
 
         self.prep_dic = {"IR Prep": "IRseqTest.json", "T2 Prep": "T2prep.json",
-                         "Tagging Prep": "tagging.json"}
-        self.aqu_dic = {"GRE Seq": "GRE.json", "Spin Echo Seq": "ٍSpinEcho.json", "SSFP Seq": ""}
+                         "Tagging Prep": "tagging.json", "No Prep": ""}
+        self.aqu_dic = {"GRE Seq": "GRE.json", "Spin Echo Seq": "SpinEcho.json", "SSFP Seq": "SSFP.json"}
 
         self.figure_sequence = Figure(dpi=80)
         self.figure_sequence_custom = Figure(dpi=80)
@@ -600,11 +604,19 @@ class Phantom(qtw.QWidget):
             gyPos = int(dataFrame['PG'].Pos[ipg])
             gyDur = int(dataFrame['PG'].Duration[ipg])
             GyTime[gyPos:gyPos+gyDur] = int(dataFrame['PG'].Amp[ipg])
+        if dataFrame['PG'].changeForIter == 1:
+            self.GyChangeForIter = True
+        else:
+            self.GyChangeForIter = False
 
         for ifg in range(np.array(dataFrame['FG'].Amp).shape[0]):
             gxPos = int(dataFrame['FG'].Pos[ifg])
             gxDur = int(dataFrame['FG'].Duration[ifg])
             GxTime[gxPos:gxPos+gxDur] = int(dataFrame['FG'].Amp[ifg])
+        if dataFrame['FG'].changeForIter == 1:
+            self.GxChangeForIter = True
+        else:
+            self.GxChangeForIter = False
 
         for iro in range(np.array(dataFrame['RO'].Pos).shape[0]):
             roPos = int(dataFrame['RO'].Pos[iro])
@@ -645,7 +657,7 @@ class Phantom(qtw.QWidget):
                 
         return Angles
 
-    def runSeq(self,timeLine,Ky = 0):
+    def runSeq(self,timeLine,IsPrep,Ky = 0):
        
 
         # T1 = self.combined_matrix[:,:,1]
@@ -658,7 +670,7 @@ class Phantom(qtw.QWidget):
                 
 
             if timeLine[select.PG][i] != 0:
-                GyAngles = self.gradientRotAngles(self.IMG_Vec,timeLine[select.PG][i],False,timeLine[select.RO][i],True,Ky)
+                GyAngles = self.gradientRotAngles(self.IMG_Vec,timeLine[select.PG][i],False,timeLine[select.RO][i],self.GyChangeForIter,Ky)
                 
                 GyAnglesMat = np.array(list(map(lambda theta: [self.Rz(theta)],GyAngles))) #to rotate rows
                 self.sliceMatrix = np.squeeze(np.matmul(GyAnglesMat,np.expand_dims(self.sliceMatrix,axis=(-1))),axis=(-1))
@@ -668,20 +680,21 @@ class Phantom(qtw.QWidget):
                 
                 
                 
-                GxAngles = self.gradientRotAngles(self.IMG_Vec,timeLine[select.FG][i],True,timeLine[select.RO][i],False)
+                GxAngles = self.gradientRotAngles(self.IMG_Vec,timeLine[select.FG][i],True,timeLine[select.RO][i],self.GxChangeForIter,Ky)
                 
                 GxAnglesMat = np.array(list(map(lambda theta: self.Rz(theta),GxAngles))) #to rotate cols
                 self.sliceMatrix = np.squeeze(np.matmul(GxAnglesMat,np.expand_dims(self.sliceMatrix,axis=(-1))),axis=(-1))
-                self.Kx += 1
-                if self.Kx >= self.IMG_Vec.shape[1]:
-                    self.Kx = 0
+                if not IsPrep:
+                    self.Kx += 1
+                    if self.Kx >= self.IMG_Vec.shape[1]:
+                        self.Kx = 0
 
 
             if timeLine[select.RO][i] != 0:
                 
                 sigmaX = np.sum(self.sliceMatrix[:, :, 0])
                 sigmaY = np.sum(self.sliceMatrix[:, :, 1]) 
-                self.IMG_K_Space[-(int(self.IMG_Vec.shape[0]/2))+Ky,self.Kx] = complex(sigmaX,sigmaY) #int(Kx*(Ky/self.IMG_Vec.shape[0]))
+                self.IMG_K_Space[-(int(self.IMG_Vec.shape[0]/2))+Ky,-self.Kx] = complex(sigmaX,sigmaY) #int(Kx*(Ky/self.IMG_Vec.shape[0]))
 
             if timeLine[select.DR][i] != 0:
                 self.sliceMatrix = self.Decay_Recovery_Matrix(self.sliceMatrix,self.T1,self.T2,timeLine[select.DR][i])
@@ -730,25 +743,25 @@ class Phantom(qtw.QWidget):
                 return
 
             if prep_sequence_path != '':
-                self.runSeq(self.generate_Sequence(prep_df))
-            self.runSeq(self.generate_Sequence(acc_df),Ky=Ky)
+                self.runSeq(self.generate_Sequence(prep_df),True)
+            self.runSeq(self.generate_Sequence(acc_df),False,Ky=Ky)
             
             # shift + tab the under section to mke the procecessing way faster as the plotting takes time
-            w, h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(
-                    self.figure_Orig_Spat.get_figheight() * self.figure_Orig_Spat.dpi)
+        w, h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(
+                self.figure_Orig_Spat.get_figheight() * self.figure_Orig_Spat.dpi)
 
-            k_space_magnitude_spectrum = 20 * np.log(abs(np.fft.fftshift(self.IMG_K_Space)))
-            k_space_magnitude_spectrum = cv2.resize(k_space_magnitude_spectrum, (w, h), interpolation=cv2.INTER_AREA)
-            self.axis_kspace.imshow(k_space_magnitude_spectrum, cmap='gray')
-            self.axis_kspace.set_yticks([])
-            self.canvas_kspace.draw()
-            # update the reconstructed image for every row added to the K_Space
-            IMG_back = np.fft.ifft2(self.IMG_K_Space)
-            abs_img_back = abs(IMG_back)
-            abs_img_back = cv2.resize(abs_img_back, (w, h), interpolation=cv2.INTER_AREA)
-            self.axis_reconstruct.imshow(abs_img_back, cmap='gray')
-            self.canvas_reconstruct.draw()
-
+        k_space_magnitude_spectrum = 20 * np.log(abs(np.fft.fftshift(self.IMG_K_Space)))
+        k_space_magnitude_spectrum = cv2.resize(k_space_magnitude_spectrum, (w, h), interpolation=cv2.INTER_AREA)
+        self.axis_kspace.imshow(k_space_magnitude_spectrum, cmap='gray')
+        self.axis_kspace.set_yticks([])
+        self.canvas_kspace.draw()
+        # update the reconstructed image for every row added to the K_Space
+        IMG_back = np.fft.ifft2(self.IMG_K_Space)
+        abs_img_back = abs(IMG_back)
+        abs_img_back = cv2.resize(abs_img_back, (w, h), interpolation=cv2.INTER_AREA)
+        self.axis_reconstruct.imshow(abs_img_back, cmap='gray')
+        self.canvas_reconstruct.draw()
+        print("done")
         text = str(self.comboBox_2.currentText())+ " + " +str(self.comboBox_3.currentText())
 
         if(self.comboBox_viewer.currentText() == "Viewer 1"):
