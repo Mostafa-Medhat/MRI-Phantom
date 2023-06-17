@@ -708,7 +708,7 @@
       </attribute>
       <layout class="QGridLayout" name="gridLayout_5">
        <item row="0" column="0">
-        <layout class="QVBoxLayout" name="verticalLayout_7" stretch="1,0">
+        <layout class="QVBoxLayout" name="verticalLayout_7" stretch="1,0,0">
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_3">
            <item>
@@ -782,6 +782,15 @@
             </layout>
            </item>
           </layout>
+         </item>
+         <item alignment="Qt::AlignHCenter">
+          <widget class="QLabel" name="label_progress">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
+          </widget>
          </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_2">

@@ -377,6 +377,7 @@ class Phantom(qtw.QWidget):
         K_Space_Thread = threading.Thread(
             target=self.vecK_Space)  # replace with this (self.Run_Sequence) to run the custom sequence
 
+        self.label_progress.setText("Loading...")
         K_Space_Thread.start()
 
     
@@ -780,6 +781,7 @@ class Phantom(qtw.QWidget):
             self.axis_viewer_two.imshow(abs_img_back, cmap='gray')
             self.canvas_viewer_two.draw()
 
+        self.label_progress.setText("Completed !")
         self.Running_K_Space = 0
         self.Reload_K_Space = 0
         return
