@@ -254,7 +254,7 @@ class Phantom(qtw.QWidget):
             print(self.df_custom)
             self.df_custom['RF'].Amp = self.spinBox_RF.value()
             self.df_custom['TR'].Pos = self.spinBox_TR.value()
-            self.df_custom['TE'].Pos = self.spinBox_TE.value()
+            # self.df_custom['TE'].Pos = self.spinBox_TE.value()
             print(self.df_custom)
 
             self.plotting_sequence(self.axes_sequence_custom, self.canvas_sequence_custom, self.df_custom)

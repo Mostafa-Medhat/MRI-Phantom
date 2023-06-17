@@ -187,7 +187,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QSpinBox" name="spinBox_Gradient"/>
+                 <widget class="QSpinBox" name="spinBox_TR"/>
                 </item>
                 <item>
                  <spacer name="horizontalSpacer_7">
