@@ -93,8 +93,10 @@ class Phantom(qtw.QWidget):
         self.Gmiddle = 1
 
         self.prep_dic = {"IR Prep": "PrepPulses/IRseqTest.json", "T2 Prep": "PrepPulses/T2prep.json",
-                         "Tagging Prep": "PrepPulses/tagging.json", "No Prep": ""}
-        self.aqu_dic = {"GRE Seq": "Sequences/GRE.json", "Spin Echo Seq": "Sequences/SpinEcho.json", "SSFP Seq": "Sequences/SSFP.json"}
+                         "D Tagging Prep": "PrepPulses/Dtagging.json","H Tagging Prep": "PrepPulses/Htagging.json",
+                          "V Tagging Prep": "PrepPulses/Vtagging.json", "No Prep": ""}
+        self.aqu_dic = {"GRE Seq": "Sequences/GRE.json", "Spin Echo Seq": "Sequences/SpinEcho.json", "SSFP Seq": "Sequences/SSFP.json",
+                        "Turbo Spin Echo Seq": "Sequences/TurpoSpinEcho.json"}
 
         self.figure_sequence = Figure(dpi=80)
         self.figure_sequence_custom = Figure(dpi=80)
@@ -658,9 +660,9 @@ class Phantom(qtw.QWidget):
                 
         return Angles
 
-    def runSeq(self,timeLine,IsPrep,Ky = 0):
+    def runSeq(self,timeLine,IsPrep,IsTurbo = False,Ky = 0):
        
-
+        isturbocount = 0
         # T1 = self.combined_matrix[:,:,1]
         # T2 = self.combined_matrix[:,:,2]
         # for Ky in range(self.IMG_Vec.shape[0]):
@@ -668,7 +670,10 @@ class Phantom(qtw.QWidget):
             if timeLine[select.RF][i] != 0:
                 
                 self.sliceMatrix = np.squeeze(np.matmul(self.Rx(timeLine[select.RF][i]),np.expand_dims(self.sliceMatrix,axis=(-1))),axis=(-1))
-                
+                if IsTurbo and timeLine[select.RF][i] == 180:
+                    isturbocount +=1
+                    if isturbocount >= 2:
+                        Ky+=1
 
             if timeLine[select.PG][i] != 0:
                 GyAngles = self.gradientRotAngles(self.IMG_Vec,timeLine[select.PG][i],False,timeLine[select.RO][i],self.GyChangeForIter,Ky)
@@ -730,10 +735,15 @@ class Phantom(qtw.QWidget):
 
         acc_dictionary = json.load(open(acc_sequence_path))
         acc_df = pd.DataFrame(acc_dictionary)
+        isTurboSpin = False
+        kystep = 1
+        if acc_sequence_path == "TurpoSpinEcho.json":
+            isTurboSpin = True
+            kystep = 2
         
         #read prep
         #read acusition
-        for Ky in range(self.IMG_Vec.shape[0]):
+        for Ky in range(0,self.IMG_Vec.shape[0],kystep):
 
             self.Running_K_Space = 1
 
@@ -744,8 +754,8 @@ class Phantom(qtw.QWidget):
                 return
 
             if prep_sequence_path != '':
-                self.runSeq(self.generate_Sequence(prep_df),True)
-            self.runSeq(self.generate_Sequence(acc_df),False,Ky=Ky)
+                self.runSeq(self.generate_Sequence(prep_df),True,isTurboSpin)
+            self.runSeq(self.generate_Sequence(acc_df),False,isTurboSpin,Ky=Ky)
             
             # shift + tab the under section to mke the procecessing way faster as the plotting takes time
         w, h = int(self.figure_Orig_Spat.get_figwidth() * self.figure_Orig_Spat.dpi), int(

@@ -11,23 +11,23 @@
     },
     "PG": {
       "Amp": [360],
-      "Pos": [4],
+      "Pos": [41],
       "Duration": [32],
       "changeForIter": 1
     },
     "FG": {
       "Amp": [180,360],
-      "Pos": [4,64],
+      "Pos": [4,80],
       "Duration": [32,32],
       "changeForIter": 0
     },
     "RO": {
-      "Pos": [64],
+      "Pos": [80],
       "Duration": [32]
     },
     "DR": {
       "Amp": [1,1,2000],
-      "Pos": [39,63,800]
+      "Pos": [39,79,800]
     },
     "TR": {
       "Value": 0

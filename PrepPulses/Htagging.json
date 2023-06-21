@@ -1,0 +1,39 @@
+{
+  "RF": {
+      "Amp": [45, 45],
+      "Pos": [0, 5],
+      "Duration": [2, 2]
+    },
+  "SS": {
+      "Amp": [0],
+      "Pos": [0],
+      "Duration": [0]
+    },
+
+    "PG": {
+      "Amp": [10, 700],
+      "Pos": [2,7],
+      "Duration": [3, 6],
+      "changeForIter": 1
+    },
+    "FG": {
+      "Amp": [0],
+      "Pos": [0],
+      "Duration": [0],
+      "changeForIter": 0
+    },
+    "RO": {
+      "Pos": [0],
+      "Duration": [0]
+    },
+    "DR": {
+      "Amp": [0],
+      "Pos": [0]
+    },
+    "TR": {
+      "Value": 0
+    },
+    "TE": {
+      "Value": 0
+    }
+}
