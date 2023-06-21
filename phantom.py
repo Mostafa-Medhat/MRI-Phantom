@@ -262,6 +262,46 @@ class Phantom(qtw.QWidget):
 
         #
         canvas.draw()
+    def plotPrepAcc(self, axes, canvas,preptimeline,acctimeline):
+        timeline = np.zeros((4,225))
+        if preptimeline != []:
+            timeline[select.RF][5:20] = preptimeline[select.RF][0:15]
+            timeline[select.PG][5:20] = preptimeline[select.PG][0:15]
+            timeline[select.FG][5:20] = preptimeline[select.FG][0:15]
+            timeline[select.RO][5:20] = preptimeline[select.RO][0:15]
+        timeline[select.RF][25:225] = acctimeline[select.RF][0:200]
+        timeline[select.PG][25:225] = acctimeline[select.PG][0:200]
+        timeline[select.FG][25:225] = acctimeline[select.FG][0:200]
+        timeline[select.RO][25:225] = acctimeline[select.RO][0:200]
+        colors = ['b', 'g', 'blueviolet', 'orange', 'red']
+        for color, axis in enumerate(axes):
+            axis.clear()
+            if preptimeline != []:
+                axis.axvline(int(20), color='black')
+        axes[0].plot(np.array(timeline[select.RF][0:200]),color=colors[0])
+        axes[0].set_ylabel("RF")
+        ############################
+        axes[1].plot(np.array(timeline[select.PG][0:200]),color=colors[1])
+        timeline[select.PG][0:200][timeline[select.PG][0:200]==360] = 240
+        axes[1].plot(np.array(timeline[select.PG][0:200]),color=colors[1])
+        timeline[select.PG][0:200][timeline[select.PG][0:200]==240] = 120
+        axes[1].plot(np.array(timeline[select.PG][0:200]),color=colors[1])
+        timeline[select.PG][0:200][timeline[select.PG][0:200]==120] = -120
+        axes[1].plot(np.array(timeline[select.PG][0:200]),color=colors[1])
+        timeline[select.PG][0:200][timeline[select.PG][0:200]==-120] = -240
+        axes[1].plot(np.array(timeline[select.PG][0:200]),color=colors[1])
+        timeline[select.PG][0:200][timeline[select.PG][0:200]==-240] = -360
+        axes[1].plot(np.array(timeline[select.PG][0:200]),color=colors[1])
+        timeline[select.PG][0:200][timeline[select.PG][0:200]==-360] = 0
+        axes[1].plot(np.array(timeline[select.PG][0:200]),color=colors[1])
+        axes[1].set_ylabel("PG")
+        ############################
+        axes[2].plot(np.array(timeline[select.FG][0:200]),color=colors[2])
+        axes[2].set_ylabel("FG")
+        axes[3].plot(np.array(timeline[select.RO][0:200]),color=colors[3])
+        axes[3].set_ylabel("RO")
+        
+        canvas.draw()
 
     def custom_sequence(self):
         if (self.df is not None):
@@ -767,7 +807,10 @@ class Phantom(qtw.QWidget):
         if acc_sequence_path == "TurpoSpinEcho.json":
             isTurboSpin = True
             kystep = 2
-        
+        if prep_sequence_path == '':
+            self.plotPrepAcc(self.axes_sequence, self.canvas_sequence,[],self.generate_Sequence(acc_df))
+        else:
+            self.plotPrepAcc(self.axes_sequence, self.canvas_sequence,self.generate_Sequence(prep_df),self.generate_Sequence(acc_df))
         #read prep
         #read acusition
         for Ky in range(0,self.IMG_Vec.shape[0],kystep):
