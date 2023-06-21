@@ -129,6 +129,7 @@ class Phantom(qtw.QWidget):
         self.canvas_Orig_Spat.mpl_connect('button_press_event', self.getPixel)
         self.comboBox_contrastType.currentIndexChanged.connect(lambda: self.show_contrast())
         self.pushButton_Draw.clicked.connect(lambda: self.start_K_Space_threading())
+        self.comboBox_2.currentIndexChanged.connect(lambda: self.prep_parameter())
 
 
     def drawer_layout(self,):
@@ -150,6 +151,18 @@ class Phantom(qtw.QWidget):
         for axis in self.viewer_axes:  # removing axes from the figure
             axis.set_xticks([])
             axis.set_yticks([])
+
+
+    def prep_parameter(self):
+        if(self.comboBox_2.currentText() == "IR Prep"):
+            self.label_parameter.setText("Inversion Delay")
+        elif(self.comboBox_2.currentText() == "T2 Prep"):
+            self.label_parameter.setText("T2prep Duration")
+        elif(self.comboBox_2.currentText() == "D Tagging Prep" or self.comboBox_2.currentText() == "H Tagging Prep" or self.comboBox_2.currentText() == "V Tagging Prep"):
+            self.label_parameter.setText("Distance Between Lines")
+        elif(self.comboBox_2.currentText() == "No Prep"):
+            self.label_parameter.setText("Parameter")
+
 
 
 
@@ -732,6 +745,20 @@ class Phantom(qtw.QWidget):
         if prep_sequence_path != '':
             prep_dictionary = json.load(open(prep_sequence_path))
             prep_df = pd.DataFrame(prep_dictionary)
+
+        if (self.comboBox_2.currentText() == "IR Prep"):
+            """
+            do the spinBox modification
+            """
+        elif (self.comboBox_2.currentText() == "T2 Prep"):
+            """
+            do the spinBox modification
+            """
+        elif (self.comboBox_2.currentText() == "D Tagging Prep" or self.comboBox_2.currentText() == "H Tagging Prep" or self.comboBox_2.currentText() == "V Tagging Prep"):
+            """
+            do the spinBox modification
+            """
+        
 
         acc_dictionary = json.load(open(acc_sequence_path))
         acc_df = pd.DataFrame(acc_dictionary)
