@@ -10,14 +10,14 @@
       "Duration": [0]
     },
 
-    "FG": {
-     "Amp": [10, 700],
+    "PG": {
+      "Amp": [10, 700],
       "Pos": [2,7],
       "Duration": [3, 6],
       "changeForIter": 1
     },
-    "PG": {
-     "Amp": [0],
+    "FG": {
+      "Amp": [0],
       "Pos": [0],
       "Duration": [0],
       "changeForIter": 0

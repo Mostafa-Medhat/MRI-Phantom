@@ -808,6 +808,11 @@
              </property>
              <item>
               <property name="text">
+               <string>No Prep</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
                <string>IR Prep</string>
               </property>
              </item>
@@ -818,14 +823,20 @@
              </item>
              <item>
               <property name="text">
-               <string>Tagging Prep</string>
+               <string>D Tagging Prep</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string>No Prep</string>
+               <string>H Tagging Prep</string>
               </property>
              </item>
+             <item>
+              <property name="text">
+               <string>V Tagging Prep</string>
+              </property>
+             </item>
+             
             </widget>
            </item>
            <item>
@@ -866,7 +877,7 @@
              </item>
              <item>
               <property name="text">
-               <string>STIR Seq</string>
+               <string>Turpo Spin Echo Seq</string>
               </property>
              </item>
              <item>

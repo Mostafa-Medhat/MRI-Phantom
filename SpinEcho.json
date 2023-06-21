@@ -1,41 +1,40 @@
 {
-    "RF": {
-      "Amp": [38,180],
-      "Pos": [0,40],
-      "Duration": [1]
-    },
-    "SS": {
-      "Amp": [3],
-      "Pos": [0],
-      "Duration": [4]
-    },
-    "PG": {
-      "Amp": [360],
-      "Pos": [4],
-      "Duration": [32],
-      "changeForIter": 1
-    },
-    "FG": {
-      "Amp": [180,360],
-      "Pos": [4,64],
-      "Duration": [32,32],
-      "changeForIter": 0
-    },
-    "RO": {
-      "Pos": [64],
-      "Duration": [32]
-    },
-    "DR": {
-      "Amp": [1,1,2000],
-      "Pos": [39,63,800]
-    },
-    "TR": {
-      "Value": 0
-    },
-    "TE": {
-      "Value": 0
-    }
+  "RF": {
+    "Amp": [38,180],
+    "Pos": [0,40],
+    "Duration": [1]
+  },
+  "SS": {
+    "Amp": [3],
+    "Pos": [0],
+    "Duration": [4]
+  },
+  "PG": {
+    "Amp": [360],
+    "Pos": [41],
+    "Duration": [32],
+    "changeForIter": 1
+  },
+  "FG": {
+    "Amp": [180,360],
+    "Pos": [4,80],
+    "Duration": [32,32],
+    "changeForIter": 0
+  },
+  "RO": {
+    "Pos": [80],
+    "Duration": [32]
+  },
+  "DR": {
+    "Amp": [1,1,2000],
+    "Pos": [39,79,800]
+  },
+  "TR": {
+    "Value": 0
+  },
+  "TE": {
+    "Value": 0
   }
-  
-  
-  
+}
+
+
