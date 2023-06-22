@@ -595,12 +595,12 @@
                 </property>
                 <item>
                  <property name="text">
-                  <string>16</string>
+                  <string>32</string>
                  </property>
                 </item>
                 <item>
                  <property name="text">
-                  <string>32</string>
+                  <string>16</string>
                  </property>
                 </item>
                 <item>
@@ -712,7 +712,7 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_3">
            <item>
-            <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,0,1">
+            <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,0,1,1">
              <item alignment="Qt::AlignHCenter">
               <widget class="QLabel" name="label_13">
                <property name="font">
@@ -744,10 +744,13 @@
              <item>
               <widget class="QWidget" name="widget_6" native="true"/>
              </item>
+             <item>
+              <widget class="QWidget" name="widget_drawer_kspace_one" native="true"/>
+             </item>
             </layout>
            </item>
            <item>
-            <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,1">
+            <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,1,1">
              <item alignment="Qt::AlignHCenter">
               <widget class="QLabel" name="label_14">
                <property name="font">
@@ -778,6 +781,9 @@
              </item>
              <item>
               <widget class="QWidget" name="widget_7" native="true"/>
+             </item>
+             <item>
+              <widget class="QWidget" name="widget_drawer_kspace_two" native="true"/>
              </item>
             </layout>
            </item>
@@ -868,7 +874,11 @@
             </widget>
            </item>
            <item>
-            <widget class="QSpinBox" name="spinBox_parameter"/>
+            <widget class="QSpinBox" name="spinBox_parameter">
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+            </widget>
            </item>
            <item>
             <spacer name="horizontalSpacer_19">

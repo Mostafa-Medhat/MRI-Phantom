@@ -147,21 +147,49 @@ class Phantom(qtw.QWidget):
         self.canvas_viewer_two.figure.set_facecolor("#19232D")
         self.verticalLayout_5.addWidget(self.canvas_viewer_two)
 
-        self.viewer_axes = [self.axis_viewer_one,self.axis_viewer_two]
+        self.figure_kspace_viewer_one = Figure(figsize=(50, 50), dpi=100)
+        self.axis_kspace_viewer_one = self.figure_kspace_viewer_one.add_subplot()
+        self.canvas_kspace_viewer_one = FigureCanvas(self.figure_kspace_viewer_one)
+        self.axis_kspace_viewer_one.set_facecolor('black')
+        self.canvas_kspace_viewer_one.figure.set_facecolor("#19232D")
+        self.verticalLayout_3.addWidget(self.canvas_kspace_viewer_one)
+
+        self.figure_kspace_viewer_two = Figure(figsize=(50, 50), dpi=100)
+        self.axis_kspace_viewer_two = self.figure_kspace_viewer_two.add_subplot()
+        self.canvas_kspace_viewer_two = FigureCanvas(self.figure_kspace_viewer_two)
+        self.axis_kspace_viewer_two.set_facecolor('black')
+        self.canvas_kspace_viewer_two.figure.set_facecolor("#19232D")
+        self.verticalLayout_5.addWidget(self.canvas_kspace_viewer_two)
+
+
+        self.viewer_axes = [self.axis_viewer_one,self.axis_viewer_two, self.axis_kspace_viewer_one, self.axis_kspace_viewer_two]
         for axis in self.viewer_axes:  # removing axes from the figure
             axis.set_xticks([])
             axis.set_yticks([])
 
 
     def prep_parameter(self):
+
+        self.prep_sequence_path = self.prep_dic[self.comboBox_2.currentText()]  # "T2prep.json"
+        if self.prep_sequence_path != '':
+            prep_dictionary = json.load(open(self.prep_sequence_path))
+            self.prep_df = pd.DataFrame(prep_dictionary)
+
+
         if(self.comboBox_2.currentText() == "IR Prep"):
             self.label_parameter.setText("Inversion Delay")
+            self.spinBox_parameter.setValue(self.prep_df['DR'].Amp[0])
         elif(self.comboBox_2.currentText() == "T2 Prep"):
             self.label_parameter.setText("T2prep Duration")
+            self.spinBox_parameter.setValue(self.prep_df['DR'].Amp[0])
+
         elif(self.comboBox_2.currentText() == "D Tagging Prep" or self.comboBox_2.currentText() == "H Tagging Prep" or self.comboBox_2.currentText() == "V Tagging Prep"):
             self.label_parameter.setText("Distance Between Lines")
+            self.spinBox_parameter.setValue(0)
+
         elif(self.comboBox_2.currentText() == "No Prep"):
             self.label_parameter.setText("Parameter")
+            self.spinBox_parameter.setValue(0)
 
 
 
@@ -261,6 +289,47 @@ class Phantom(qtw.QWidget):
                 axis_custom.set_ylim(ymin, ymax)
 
         #
+        canvas.draw()
+
+    def plotPrepAcc(self, axes, canvas, preptimeline, acctimeline):
+        timeline = np.zeros((4, 225))
+        if preptimeline != []:
+            timeline[select.RF][5:20] = preptimeline[select.RF][0:15]
+            timeline[select.PG][5:20] = preptimeline[select.PG][0:15]
+            timeline[select.FG][5:20] = preptimeline[select.FG][0:15]
+            timeline[select.RO][5:20] = preptimeline[select.RO][0:15]
+        timeline[select.RF][25:225] = acctimeline[select.RF][0:200]
+        timeline[select.PG][25:225] = acctimeline[select.PG][0:200]
+        timeline[select.FG][25:225] = acctimeline[select.FG][0:200]
+        timeline[select.RO][25:225] = acctimeline[select.RO][0:200]
+        colors = ['b', 'g', 'blueviolet', 'orange', 'red']
+        for color, axis in enumerate(axes):
+            axis.clear()
+            if preptimeline != []:
+                axis.axvline(int(20), color='black')
+        axes[0].plot(abs(np.array(timeline[select.RF][0:200])), color=colors[0])
+        axes[0].set_ylabel("RF")
+        ############################
+        axes[1].plot(np.array(timeline[select.PG][0:200]), color=colors[1])
+        timeline[select.PG][0:200][timeline[select.PG][0:200] == 360] = 240
+        axes[1].plot(np.array(timeline[select.PG][0:200]), color=colors[1])
+        timeline[select.PG][0:200][timeline[select.PG][0:200] == 240] = 120
+        axes[1].plot(np.array(timeline[select.PG][0:200]), color=colors[1])
+        timeline[select.PG][0:200][timeline[select.PG][0:200] == 120] = -120
+        axes[1].plot(np.array(timeline[select.PG][0:200]), color=colors[1])
+        timeline[select.PG][0:200][timeline[select.PG][0:200] == -120] = -240
+        axes[1].plot(np.array(timeline[select.PG][0:200]), color=colors[1])
+        timeline[select.PG][0:200][timeline[select.PG][0:200] == -240] = -360
+        axes[1].plot(np.array(timeline[select.PG][0:200]), color=colors[1])
+        timeline[select.PG][0:200][timeline[select.PG][0:200] == -360] = 0
+        axes[1].plot(np.array(timeline[select.PG][0:200]), color=colors[1])
+        axes[1].set_ylabel("PG")
+        ############################
+        axes[2].plot(np.array(timeline[select.FG][0:200]), color=colors[2])
+        axes[2].set_ylabel("FG")
+        axes[3].plot(np.array(timeline[select.RO][0:200]), color=colors[3])
+        axes[3].set_ylabel("RO")
+
         canvas.draw()
 
     def custom_sequence(self):
@@ -735,31 +804,34 @@ class Phantom(qtw.QWidget):
         self.T1 , self.T2 = self.t1t2(self.IMG)
         
         print(np.array(self.combined_matrix[:,:,1]).shape)
-        self.IMG_Vec[:,:,2] = self.IMG 
+        if(self.comboBox_2.currentText() == "T2 Prep"):
+            self.IMG_Vec[:, :, 2] = np.ones((self.IMG.shape))
+        else:
+           self.IMG_Vec[:,:,2] = self.IMG
         self.IMG_K_Space = np.zeros((self.IMG.shape),dtype=np.complex_)
         self.sliceMatrix = self.IMG_Vec.copy()
 
       
-        prep_sequence_path = self.prep_dic[self.comboBox_2.currentText()]  # "T2prep.json"
         acc_sequence_path = self.aqu_dic[self.comboBox_3.currentText()]  # "GRE.json"
-        if prep_sequence_path != '':
-            prep_dictionary = json.load(open(prep_sequence_path))
-            prep_df = pd.DataFrame(prep_dictionary)
 
+
+        value = self.spinBox_parameter.value()
         if (self.comboBox_2.currentText() == "IR Prep"):
             """
             do the spinBox modification
             """
+            self.prep_df['DR'].Amp[0] = value
         elif (self.comboBox_2.currentText() == "T2 Prep"):
             """
             do the spinBox modification
             """
+            self.prep_df['DR'].Amp[0] = value
         elif (self.comboBox_2.currentText() == "D Tagging Prep" or self.comboBox_2.currentText() == "H Tagging Prep" or self.comboBox_2.currentText() == "V Tagging Prep"):
             """
             do the spinBox modification
             """
-        
 
+        print(self.prep_df)
         acc_dictionary = json.load(open(acc_sequence_path))
         acc_df = pd.DataFrame(acc_dictionary)
         isTurboSpin = False
@@ -767,6 +839,12 @@ class Phantom(qtw.QWidget):
         if acc_sequence_path == "TurpoSpinEcho.json":
             isTurboSpin = True
             kystep = 2
+
+        if self.prep_sequence_path == '':
+            self.plotPrepAcc(self.axes_sequence, self.canvas_sequence, [], self.generate_Sequence(acc_df))
+        else:
+            self.plotPrepAcc(self.axes_sequence, self.canvas_sequence, self.generate_Sequence(self.prep_df),
+                             self.generate_Sequence(acc_df))
         
         #read prep
         #read acusition
@@ -780,8 +858,8 @@ class Phantom(qtw.QWidget):
                 self.Running_K_Space = 0
                 return
 
-            if prep_sequence_path != '':
-                self.runSeq(self.generate_Sequence(prep_df),True,isTurboSpin)
+            if self.prep_sequence_path != '':
+                self.runSeq(self.generate_Sequence(self.prep_df),True,isTurboSpin)
             self.runSeq(self.generate_Sequence(acc_df),False,isTurboSpin,Ky=Ky)
             
             # shift + tab the under section to mke the procecessing way faster as the plotting takes time
@@ -802,18 +880,38 @@ class Phantom(qtw.QWidget):
         print("done")
         text = str(self.comboBox_2.currentText())+ " + " +str(self.comboBox_3.currentText())
 
+
+
+        # w, h = int(self.figure_viewer_one.get_figwidth() * self.figure_viewer_one.dpi), int(
+        #     self.figure_viewer_one.get_figheight() * self.figure_viewer_one.dpi)
+        # k_space_magnitude_spectrum = cv2.resize(k_space_magnitude_spectrum, (w, h), interpolation=cv2.INTER_AREA)
+        # self.axis_kspace_viewer_one.imshow(k_space_magnitude_spectrum, cmap='gray')
+        # self.canvas_kspace_viewer_one.draw()
+
+
         if(self.comboBox_viewer.currentText() == "Viewer 1"):
-            w, h = int(self.figure_viewer_one.get_figwidth() * self.figure_viewer_one.dpi), int(
+            w1, h1 = int(self.figure_viewer_one.get_figwidth() * self.figure_viewer_one.dpi), int(
                 self.figure_viewer_one.get_figheight() * self.figure_viewer_one.dpi)
-            abs_img_back = cv2.resize(abs_img_back, (w, h), interpolation=cv2.INTER_AREA)
+            k_space_magnitude_spectrum = cv2.resize(k_space_magnitude_spectrum, (w1, h1), interpolation=cv2.INTER_AREA)
+            self.axis_kspace_viewer_one.imshow(k_space_magnitude_spectrum, cmap='gray')
+            self.canvas_kspace_viewer_one.draw()
+            abs_img_back = cv2.resize(abs_img_back, (w1, h1), interpolation=cv2.INTER_AREA)
             self.label_viewerOne.setText(text)
+
+
             self.axis_viewer_one.imshow(abs_img_back, cmap='gray')
             self.canvas_viewer_one.draw()
 
+
         elif(self.comboBox_viewer.currentText() == "Viewer 2"):
-            w, h = int(self.figure_viewer_two.get_figwidth() * self.figure_viewer_two.dpi), int(
+
+            w2, h2 = int(self.figure_viewer_two.get_figwidth() * self.figure_viewer_two.dpi), int(
                 self.figure_viewer_two.get_figheight() * self.figure_viewer_two.dpi)
-            abs_img_back = cv2.resize(abs_img_back, (w, h), interpolation=cv2.INTER_AREA)
+            k_space_magnitude_spectrum = cv2.resize(k_space_magnitude_spectrum, (w2, h2), interpolation=cv2.INTER_AREA)
+            self.axis_kspace_viewer_two.imshow(k_space_magnitude_spectrum, cmap='gray')
+            self.canvas_kspace_viewer_two.draw()
+
+            abs_img_back = cv2.resize(abs_img_back, (w2, h2), interpolation=cv2.INTER_AREA)
             self.label_viewerTwo.setText(text)
             self.axis_viewer_two.imshow(abs_img_back, cmap='gray')
             self.canvas_viewer_two.draw()
